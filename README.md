@@ -1,2 +1,2 @@
 # gcims-curve-harmonization
-Tools and methods for cross-matrix harmonization and calibration transfer in GC-IMS data.
+Methodology and R code for harmonizing GC-IMS signal intensities across matrices (SU, POOL, individual samples) using curve alignment, scaling and calibration transfer.
