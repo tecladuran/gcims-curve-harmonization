@@ -1,0 +1,169 @@
+---
+title: "Harmonization of Individual Samples"
+author: "Tecla Duran Fort"
+date: "`r Sys.Date()`"
+output:
+  github_document: 
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(patchwork)
+library(kableExtra)
+
+source("../load_harmonization_tools.R")
+
+
+doc_colors <- c("navy", "#E0711A")
+
+model_colors <- c(
+  "Baseline" = doc_colors[1],
+  "Proposed" = doc_colors[2]
+)
+
+analyte_colors <- c("anisole"=doc_colors[1],"heptanone"=doc_colors[2])
+
+model_shapes <- c(
+  "Baseline" = 16,
+  "Proposed" = 17
+)
+
+```
+
+
+# Load Data
+
+```{r}
+path <- "../data/tables"
+
+files <- list.files(path, pattern = "\\.csv$", full.names = TRUE)
+
+for (f in files) {
+  name <- tools::file_path_sans_ext(basename(f))
+  assign(name, read.csv(f))
+}
+```
+
+```{r}
+analytes = c("anisole", "heptanone")
+samples <- c("pool","s1","s2","s3","s4")
+```
+
+
+# Harmonization of all samples
+
+```{r}
+harm_results <- list()
+
+for (sample in samples) {
+  df_target <- get(sample)
+
+  for (an in analytes) {
+    df_su <- su %>%
+      select(concentration, intensity = !!sym(an))
+
+    df_tar <- df_target %>%
+      select(concentration, intensity = !!sym(an))
+
+    res <- harmonize(df_tar, df_su)
+
+    harm_results[[paste(sample, an, sep="_")]] <- res
+  }
+}
+```
+
+# Plot for each sample and analyte
+
+```{r}
+
+for (sample in samples) {
+  for (an in analytes) {
+
+    key <- paste(sample, an, sep="_")
+    h   <- harm_results[[key]]
+    p <- plot_harmonization(h)
+    print(p)
+  }
+}
+
+```
+
+# Summary table of all scale/shift/errors
+
+```{r}
+summary_rows <- list()
+
+for (sample in samples) {
+  for (an in analytes) {
+    key <- paste(sample, an, sep="_")
+    h <- harm_results[[key]]
+
+    summary_rows[[key]] <- tibble(
+      Sample = sample,
+      Analyte = an,
+      Scale  = round(h$scale, 4),
+      Shift  = round(h$shift, 4),
+      Scale_Error = round(h$scale_error, 4),
+      Shift_Error = round(h$shift_error, 4)
+    )
+  }
+}
+
+summary_table <- bind_rows(summary_rows)
+
+kable(summary_table, caption="Summary of harmonization parameters") %>%
+  kable_styling(full_width = FALSE)
+```
+
+# Final plot: scaling factors across samples
+
+```{r, fig.height=4, fig.width=10}
+scale_table <- summary_table %>% select(Sample, Analyte, Scale)
+
+
+make_plot <- function(analyte, label){
+  df <- scale_table %>% filter(Analyte == analyte)
+
+  scale_pool <- df %>% filter(Sample=="pool") %>% pull(Scale)
+  df_plot    <- df %>% filter(Sample!="pool")
+
+  ggplot(df_plot, aes(Sample, Scale)) +
+    geom_hline(yintercept=1, color="grey40", linewidth=0.8) +
+    geom_hline(yintercept=scale_pool, color=analyte_colors[analyte],
+               linewidth=0.8, linetype="dashed") +
+    geom_point(color=analyte_colors[analyte], size=4) +
+    labs(subtitle=label, x="Sample", y="Scale") +
+    theme_minimal(base_size=14) +
+    theme(
+      plot.subtitle = element_text(face="bold", hjust=0.5)
+    )
+}
+
+p1 <- make_plot("anisole","Anisole")
+p2 <- make_plot("heptanone","2-Heptanone")
+
+p1 + p2 + plot_annotation(
+  title="Scaling Factors for All Samples",
+  subtitle="Dashed line = Pool scale"
+)
+```
+

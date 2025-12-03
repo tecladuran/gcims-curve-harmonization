@@ -1,0 +1,245 @@
+---
+title: "Reference Polynomial Adjustment to Enforce Origin Constraint"
+author: "Tecla Duran Fort"
+date: "`r Sys.Date()`"
+output:
+  github_document:
+    toc: true
+    toc_depth: 3
+    md_extensions: +raw_html
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  html_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: false
+always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6,
+  fig.height = 4
+)
+
+library(dplyr)
+library(ggplot2)
+```
+
+```{r, echo=FALSE}
+path <- "../../data/tables"
+
+files <- list.files(path, pattern = "\\.csv$", full.names = TRUE)
+
+for (f in files) {
+  name <- tools::file_path_sans_ext(basename(f))
+  assign(name, read.csv(f))
+}
+```
+
+
+Before building the calibration models, we apply a small correction to each SU reference curve to ensure that the fitted polynomial passes through the origin, based on the assumption that the analyte concentration in synthetic urine should be zero when no spike is applied ($C = 0 \Rightarrow I = 0$). 
+
+However, a **very small peak** in the **anisole** place is consistently observed in the unspiked SU samples. This signal is absent in real urine samples. We suspect this may be due to a impurity (still under investigation). This would lead to negative estimated concentrations in real samples at low intensity values. Therefore, we shift the SU curves slightly to enforce the zero-response condition at zero spike. We apply the same steps to all the analytes for consistency of the method.
+
+To correct for this, we shift the concentration values of each calibration set by a small value $r_0$ so that the fitted polynomial satisfies $f(0) = 0$. This shift is kept minimal to avoid excessive extrapolation beyond the original data range, and it is only applied when a root $r_0$ is found near zero. 
+
+
+```{r}
+shift_to_origin <- function(df, analytes, conc_col = "concentration",
+                            degree = 3, search_interval = c(-5, 1)) {
+  
+  df_shifted <- df
+  shift_info <- list()
+  
+  for (analyte in analytes) {
+    
+    # Prepare small working DF
+    tmp <- df %>%
+      dplyr::select(all_of(conc_col), all_of(analyte)) %>%
+      dplyr::rename(
+        concentration = all_of(conc_col),
+        intensity = all_of(analyte)
+      )
+    
+    # Fit original polynomial
+    fit_poly <- lm(intensity ~ poly(concentration, degree, raw = TRUE), data = tmp)
+    coef_poly <- coef(fit_poly)
+    
+    # Define polynomial function
+    f <- function(C) {
+      # IMPORTANT: build polynomial of correct length
+      powers <- 0:(length(coef_poly)-1)
+      sum(coef_poly * C^powers)
+    }
+    
+    # Compute root r0 (try-catch)
+    r0 <- NA
+    try({
+      root_obj <- uniroot(f, lower = search_interval[1], upper = search_interval[2])
+      r0 <- root_obj$root
+    }, silent = TRUE)
+    
+    new_col <- paste0("c_", analyte)
+    
+    if (!is.na(r0)) {
+      # Apply shift
+      df_shifted[[new_col]] <- df[[conc_col]] - r0
+      
+      # Build working DF for shifted model
+      tmp_shift <- df_shifted %>%
+        dplyr::select(all_of(new_col), all_of(analyte)) %>%
+        dplyr::rename(
+          concentration_shifted = all_of(new_col),
+          intensity = all_of(analyte)
+        )
+      
+      # Fit shifted polynomial without intercept
+      fit_shifted <- lm(
+        intensity ~ poly(concentration_shifted, degree, raw = TRUE) - 1,
+        data = tmp_shift
+      )
+      
+      shift_info[[analyte]] <- list(
+        r0 = r0,
+        fit_poly = fit_poly,
+        fit_shifted = fit_shifted,
+        coef_original = coef_poly,
+        coef_shifted = coef(fit_shifted)
+      )
+      
+    } else {
+      # No root found
+      df_shifted[[new_col]] <- df[[conc_col]]
+      
+      shift_info[[analyte]] <- list(
+        r0 = NA,
+        fit_poly = fit_poly,
+        fit_shifted = NULL,
+        coef_original = coef_poly,
+        coef_shifted = NULL
+      )
+    }
+  }
+  
+  return(list(
+    data = df_shifted,
+    shift_info = shift_info
+  ))
+}
+
+
+```
+
+```{r}
+res <- shift_to_origin(su, analytes = c("anisole", "heptanone"))
+su <- res$data
+shift_info <- res$shift_info
+
+```
+
+
+```{r, echo=FALSE}
+analytes <- c("anisole", "heptanone")
+
+for (analyte in analytes) {
+
+  info <- shift_info[[analyte]]
+  r0 <- info$r0
+  coef_poly <- info$coef_original
+  coef_shifted <- info$coef_shifted
+  fit_poly <- info$fit_poly
+  fit_shifted <- info$fit_shifted
+  
+  conc_shifted_col <- paste0("c_", analyte)
+
+  df_plot <- su %>%
+    dplyr::select(concentration, all_of(analyte), all_of(conc_shifted_col)) %>%
+    dplyr::rename(
+      intensity = all_of(analyte),
+      concentration_shifted = all_of(conc_shifted_col)
+    )
+
+  # Grid for predictions
+  grid_conc <- seq(0, max(df_plot$concentration, na.rm = TRUE), length.out = 200)
+
+  original_pred <- predict(fit_poly,
+                           newdata = data.frame(concentration = grid_conc))
+
+  shifted_pred <- predict(fit_shifted,
+                           newdata = data.frame(concentration_shifted = grid_conc))
+
+  plot_df <- tibble::tibble(
+    concentration = c(grid_conc, grid_conc),
+    intensity = c(original_pred, shifted_pred),
+    model = rep(c("Original", "Shifted"), each = length(grid_conc))
+  )
+
+  # Equation labels
+  formula_orig <- sprintf(
+    "f(C) = %.2f + %.2f·C + %.2f·C² + %.2f·C³",
+    coef_poly[1], coef_poly[2], coef_poly[3], coef_poly[4]
+  )
+
+  formula_shifted <- sprintf(
+    "f(C + %.3f) = %.2f·C + %.2f·C² + %.2f·C³",
+    -r0, coef_shifted[1], coef_shifted[2], coef_shifted[3]
+  )
+
+  analyte_title <- dplyr::case_when(
+    analyte == "anisole" ~ "Anisole",
+    analyte == "heptanone" ~ "2-Heptanone",
+    TRUE ~ analyte
+  )
+
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_line(
+      data = dplyr::filter(plot_df, model == "Original"),
+      ggplot2::aes(x = concentration, y = intensity),
+      color = "navy", size = 1
+    ) +
+    ggplot2::geom_line(
+      data = dplyr::filter(plot_df, model == "Shifted"),
+      ggplot2::aes(x = concentration, y = intensity),
+      color = "darkorange", size = 1
+    ) +
+    ggplot2::geom_point(
+      data = df_plot,
+      ggplot2::aes(x = concentration_shifted, y = intensity),
+      color = "black", size = 2
+    ) +
+    ggplot2::labs(
+      title = analyte_title,
+      x = "Adjusted concentration (ppb)",
+      y = "Intensity"
+    ) +
+    ggplot2::annotate(
+      "text",
+      x = min(df_plot$concentration, na.rm = TRUE),
+      y = max(df_plot$intensity, na.rm = TRUE),
+      label = formula_orig,
+      color = "navy",
+      hjust = 0, vjust = 1, size = 2.5
+    ) +
+    ggplot2::annotate(
+      "text",
+      x = min(df_plot$concentration, na.rm = TRUE),
+      y = max(df_plot$intensity, na.rm = TRUE) * 0.93,
+      label = formula_shifted,
+      color = "darkorange",
+      hjust = 0, vjust = 1, size = 2.5
+    ) +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 10, hjust = 0.5)
+    )
+
+  print(p)
+}
+
+```
+

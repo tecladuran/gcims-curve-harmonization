@@ -1,0 +1,286 @@
+---
+title: "Polynomial Fit"
+author: "Tecla Duran Fort"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  github_document:
+    toc: true
+    toc_depth: 3
+    md_extensions: +raw_html
+  html_document:
+    
+    toc: yes
+    toc_depth: 3
+    number_sections: true
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.path = "figures_summary/",
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 600
+)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+
+source("../../load_harmonization_tools.R")
+```
+
+```{r, echo=FALSE}
+path <- "../../data/tables"
+
+files <- list.files(path, pattern = "\\.csv$", full.names = TRUE)
+
+for (f in files) {
+  name <- tools::file_path_sans_ext(basename(f))
+  assign(name, read.csv(f))
+}
+
+su <- shift_to_origin(su, analytes = c("anisole", "heptanone"))$data
+```
+
+
+```{r, echo=FALSE}
+analytes <- c("anisole", "heptanone")
+```
+
+```{r}
+fit_polynomials <- function(df, analytes, conc_col = "concentration",
+                            degree = 3, intercept = FALSE) {
+  
+  coef_table <- tibble()
+  metrics_table <- tibble()
+  models <- list()
+  
+  for (analyte in analytes) {
+    
+    # detect shifted concentration
+    conc_shifted <- paste0("c_", analyte)
+    use_shifted <- conc_shifted %in% names(df)
+    concentration_var <- ifelse(use_shifted, conc_shifted, conc_col)
+    
+    # build df
+    tmp <- df %>%
+      dplyr::select(all_of(concentration_var), all_of(analyte)) %>%
+      dplyr::rename(
+        concentration = all_of(concentration_var),
+        intensity = all_of(analyte)
+      )
+    
+    # formula
+    if (intercept) {
+      form <- as.formula(paste0("intensity ~ poly(concentration, ", degree, ", raw = TRUE)"))
+    } else {
+      form <- as.formula(paste0("intensity ~ poly(concentration, ", degree, ", raw = TRUE) - 1"))
+    }
+    
+    # fit model
+    fit <- lm(form, data = tmp)
+    sfit <- summary(fit)
+    
+    # metrics essentials
+    R2 <- sfit$r.squared
+    adjR2 <- sfit$adj.r.squared
+    RSE <- sfit$sigma
+    RSS <- sum(fit$residuals^2)
+    
+    # save model
+    models[[analyte]] <- fit
+    
+    # coefficients row
+    cf <- coef(fit)
+    coef_row <- tibble(
+      Analyte = display_name(analyte),
+      a0 = ifelse(intercept, cf[1], 0),
+      a1 = cf[ifelse(intercept, 2, 1)],
+      a2 = cf[ifelse(intercept, 3, 2)],
+      a3 = cf[ifelse(intercept, 4, 3)]
+    )
+    coef_table <- bind_rows(coef_table, coef_row)
+    
+    # metrics row
+    metrics_row <- tibble(
+      Analyte = analyte,
+      R2 = R2,
+      adjR2 = adjR2,
+      RSE = RSE,
+      RSS = RSS
+    )
+    metrics_table <- bind_rows(metrics_table, metrics_row)
+  }
+  
+  return(list(
+    coef_table = coef_table,
+    metrics_table = metrics_table,
+    models = models
+  ))
+}
+
+
+```
+
+```{r}
+res_poly <- fit_polynomials(su, analytes)
+
+coef_poly <- res_poly$coef_table
+metrics_poly <- res_poly$metrics_table
+models_list <- res_poly$models
+```
+
+```{r}
+plot_polynomial_fits <- function(df, models_list) {
+  
+  for (analyte in names(models_list)) {
+    
+    fit <- models_list[[analyte]]
+    cf <- coef(fit)
+    
+    # detect concentration variable
+    conc_shifted <- paste0("c_", analyte)
+    concentration_var <- ifelse(conc_shifted %in% names(df), conc_shifted, "concentration")
+    
+    tmp <- df %>%
+      dplyr::select(all_of(concentration_var), all_of(analyte)) %>%
+      dplyr::rename(
+        concentration = all_of(concentration_var),
+        intensity = all_of(analyte)
+      )
+    
+    grid <- seq(min(tmp$concentration), max(tmp$concentration), length.out = 200)
+    preds <- predict(fit, newdata = data.frame(concentration = grid))
+    
+    # equation text
+    a0 <- ifelse("(Intercept)" %in% names(cf), cf[1], 0)
+    a1 <- cf[ifelse("(Intercept)" %in% names(cf), 2, 1)]
+    a2 <- cf[ifelse("(Intercept)" %in% names(cf), 3, 2)]
+    a3 <- cf[ifelse("(Intercept)" %in% names(cf), 4, 3)]
+    
+    eq_text <- sprintf("f(C) = %.3f + %.3f·C + %.3f·C² + %.3f·C³",
+                       a0, a1, a2, a3)
+    
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_point(
+        data = tmp,
+        aes(x = concentration, y = intensity),
+        color = "black", size = 2
+      ) +
+      ggplot2::geom_line(
+        data = tibble(concentration = grid, intensity = preds),
+        aes(x = concentration, y = intensity),
+        color = "navy", size = 1
+      ) +
+      ggplot2::annotate(
+        "text",
+        x = min(tmp$concentration),
+        y = max(tmp$intensity),
+        label = eq_text,
+        hjust = 0, vjust = 1, size = 5,
+        color = "navy"
+      ) +
+      ggplot2::labs(
+        title = display_name(analyte),
+        x = "Concentration",
+        y = "Intensity"
+      ) +
+      ggplot2::theme_minimal()+
+      ggplot2::theme_minimal(base_size = 14) +  
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = 0.5,      
+          face = "bold",      
+          size = 16   
+        ))
+    
+    print(p)
+  }
+}
+
+```
+
+```{r}
+plot_polynomial_fits(su, models_list)
+
+```
+
+```{r}
+degrees <- 1:5
+
+for (analyte in analytes) {
+  
+  # Detectar concentració corregida
+  conc_var <- ifelse(paste0("c_", analyte) %in% colnames(su),
+                     paste0("c_", analyte),
+                     "concentration")
+  
+  # Dataset temporal
+  tmp <- su %>%
+    select(all_of(conc_var), all_of(analyte)) %>%
+    rename(concentration = all_of(conc_var),
+           intensity = all_of(analyte))
+  
+  # ---- Ajustos per graus 1–5 ----
+  df_res <- map_df(degrees, function(deg) {
+    form <- as.formula(paste0("intensity ~ poly(concentration, ", deg, ", raw = TRUE) - 1"))
+    fit <- lm(form, data = tmp)
+    s   <- summary(fit)
+    tibble(Degree = deg, R2 = s$r.squared, RSE = s$sigma)
+  })
+  
+  # ---- Escala per doble eix ----
+  max_RSE <- max(df_res$RSE)
+  scale_factor <- max_RSE / 1   # perquè R² max = 1
+  
+  # ---- Plot ----
+  p <- ggplot(df_res, aes(x = Degree)) +
+    
+    # RSE (eix dret)
+    geom_line(aes(y = RSE, color = "RSE"), linewidth = 1.2) +
+    geom_point(aes(y = RSE, color = "RSE"), size = 3) +
+    
+    # R² (eix esquerre, transformat)
+    geom_line(aes(y = R2 * scale_factor, color = "R2"), linewidth = 1.2) +
+    geom_point(aes(y = R2 * scale_factor, color = "R2"), size = 3) +
+    
+    scale_color_manual(
+      name = "",
+      values = c("R2" = "navy", "RSE" = "darkorange"),
+      labels = c("R²", "Residual Std. Error")
+    ) +
+    
+    scale_y_continuous(
+      name = "R²",
+      limits = c(0, max_RSE),
+      sec.axis = sec_axis(~., name = "Residual Std. Error")
+    ) +
+    
+    labs(
+      title = paste("Model complexity vs fit quality —", display_name(analyte)),
+      x = "Polynomial degree"
+    ) +
+    
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      legend.position = "bottom",
+      axis.title.y = element_text(color = "navy", face = "bold"),
+      axis.title.y.right = element_text(color = "darkorange", face = "bold")
+    )
+  
+  print(p)
+}
+
+
+```
+
+

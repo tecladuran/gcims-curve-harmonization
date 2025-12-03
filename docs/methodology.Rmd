@@ -1,0 +1,892 @@
+---
+title: "Methodology and Error in Individual Urine Samples"
+author: "Tecla Duran Fort"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  github_document:
+    toc: true
+    toc_depth: 3
+    md_extensions: +raw_html
+  html_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: false
+always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6, 
+  fig.height = 4
+)
+
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(patchwork)
+
+source("../load_harmonization_tools.R")
+
+doc_colors <- c("navy", "#E0711A")
+
+
+analyte_colors <- c("anisole"=doc_colors[1],"heptanone"=doc_colors[2])
+
+
+model_colors <- c(
+  "Baseline" = doc_colors[1],
+  "Proposed" = doc_colors[2]
+)
+
+model_shapes <- c(
+  "Baseline" = 16,
+  "Proposed" = 17
+)
+
+```
+
+
+# Load Data
+
+```{r}
+path <- "../data/tables"
+
+files <- list.files(path, pattern = "\\.csv$", full.names = TRUE)
+
+for (f in files) {
+  name <- tools::file_path_sans_ext(basename(f))
+  assign(name, read.csv(f))
+}
+```
+
+```{r}
+analytes = c("anisole", "heptanone")
+```
+
+
+# Calibration Curves
+
+## Reference Polynomial Adjustment to Enforce Origin Constraint
+
+```{r}
+su <- shift_to_origin(su, analytes)$data
+```
+
+```{r}
+# Individual Tables
+
+for (a in analytes) {
+  
+  # Subset SU: concentration column is specific for each analyte
+  su_df <- su %>%
+    dplyr::select(
+      concentration = dplyr::all_of(paste0("c_", a)),
+      intensity     = dplyr::all_of(a)
+    )
+  
+  # Subset POOL: a single concentration column and an intensity column per analyte
+  pool_df <- pool %>%
+    dplyr::select(
+      concentration,
+      intensity = dplyr::all_of(a)
+    )
+  
+  # Store in the global environment as su_analyte and pool_analyte
+  assign(paste0("su_", a),   su_df,   envir = .GlobalEnv)
+  assign(paste0("pool_", a), pool_df, envir = .GlobalEnv)
+}
+
+str(su_anisole)
+str(pool_anisole)
+```
+
+## Polynomial Fit
+
+```{r}
+res_poly <- fit_polynomials(su, c("anisole", "heptanone"))
+
+coef_poly <- res_poly$coef_table
+metrics_poly <- res_poly$metrics_table
+models_list <- res_poly$models
+```
+
+```{r}
+plot_polynomial_fits(su, models_list)
+```
+
+```{r}
+coef_poly %>%
+  knitr::kable(
+    caption = "Polynomial coefficients (degree 3, no intercept)",
+    digits = 4,
+    col.names = c("Analyte", "a0", "a1", "a2", "a3"),
+    align = "lcccc"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center")
+
+# Mostrar taula de mètriques
+metrics_poly %>%
+  knitr::kable(
+    caption = "Model fit metrics",
+    digits = 4,
+    col.names = c("Analyte", "R²", "Adjusted R²", "RSE", "RSS"),
+    align = "lcccc"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center")
+
+```
+
+
+```{r}
+equations_table <- coef_poly %>%
+  mutate(
+    Equation = sprintf(
+      "f(C) = %.3f·C + %.3f·C² + %.3f·C³",
+      a1, a2, a3
+    )
+  ) %>%
+  select(Analyte, Equation)
+equations_table %>%
+  knitr::kable(
+    caption = "Polynomial equations",
+    col.names = c("Analyte", "Equation"),
+    align = "l",
+    digits = 4
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center")
+```
+# Harmonization
+
+## Anisole
+
+```{r, echo=TRUE}
+res_anisole <- harmonize(pool_anisole, su_anisole)
+```
+
+```{r}
+# Create summary table
+summary_anisole <- tibble::tibble(
+Parameter = c("Scale", "Shift"),
+Value     = c(
+round(res_anisole$scale,  3),
+round(res_anisole$shift,  3)
+),
+Error     = c(
+paste0("±", round(res_anisole$scale_error, 3)),
+paste0("±", round(res_anisole$shift_error, 3))
+),
+Units = c("–", "ppb")
+)
+
+knitr::kable(
+summary_anisole,
+caption = "Harmonization parameters and uncertainty (Anisole)",
+align = "c"
+)
+
+```
+
+```{r}
+plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
+```
+
+### Final Calibration Curves
+
+Calibration curves without harmonization (baseline model) and with pool harmonization (proposed model).
+
+```{r}
+calibration_anisole <- tibble(
+  concentration_original   = res_anisole$su_grid$concentration,
+  concentration_harmonized = res_anisole$su_grid_trans$concentration + res_anisole$shift,
+  intensity                = res_anisole$su_grid_trans$intensity
+)
+```
+
+```{r}
+ggplot(calibration_anisole) +
+  
+  # Harmonized (navy)
+  geom_line(
+    aes(
+      x = concentration_harmonized,
+      y = intensity,
+      color = "Harmonized"
+    ),
+    linewidth = 1.2
+  ) +
+  
+  # Original (orange)
+  geom_line(
+    aes(
+      x = concentration_original,
+      y = intensity,
+      color = "Original"
+    ),
+    linewidth = 1.2,
+    linetype = "dashed"
+  ) +
+  
+  scale_color_manual(
+    name = "",
+    values = c("Harmonized" = "navy", "Original" = "#E0711A")
+  ) +
+  
+  labs(
+    title = "Calibration Curves — Anisole",
+    x = "Concentration (ppb)",
+    y = "Intensity"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = .5),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12)
+  )
+
+```
+
+
+
+## Heptanone
+
+```{r, echo=TRUE}
+res_heptanone <- harmonize(pool_heptanone, su_heptanone)
+```
+
+```{r}
+# Create summary table
+summary_hept <- tibble::tibble(
+Parameter = c("Scale", "Shift"),
+Value     = c(
+round(res_heptanone$scale,  3),
+round(res_heptanone$shift,  3)
+),
+Error     = c(
+paste0("±", round(res_heptanone$scale_error["upper"], 3)),
+paste0("±", round(res_heptanone$shift_error["upper"], 3))
+),
+Units = c("–", "ppb")
+)
+
+knitr::kable(
+summary_hept,
+caption = "Harmonization parameters and uncertainty (Heptanone)",
+align = "c"
+)
+
+```
+
+```{r, echo=TRUE}
+plot_harmonization(res_heptanone, title = "Calibration Harmonization - 2- Heptanone")
+```
+
+
+### Final Calibration Curves
+
+Calibration curves without harmonization (baseline model) and with pool harmonization (proposed model).
+
+```{r}
+calibration_heptanone <- tibble(
+  concentration_original   = res_heptanone$su_grid$concentration,
+  concentration_harmonized = res_heptanone$su_grid_trans$concentration + res_heptanone$shift,
+  intensity                = res_heptanone$su_grid_trans$intensity
+)
+
+```
+
+```{r}
+ggplot(calibration_heptanone) +
+  
+  # Harmonized (navy)
+  geom_line(
+    aes(
+      x = concentration_harmonized,
+      y = intensity,
+      color = "Harmonized"
+    ),
+    linewidth = 1.2
+  ) +
+  
+  # Original (orange)
+  geom_line(
+    aes(
+      x = concentration_original,
+      y = intensity,
+      color = "Original"
+    ),
+    linewidth = 1.2,
+    linetype = "dashed"
+  ) +
+  
+  scale_color_manual(
+    name = "",
+    values = c("Harmonized" = "navy", "Original" = "#E0711A")
+  ) +
+  
+  labs(
+    title = "Calibration Curves — 2-Heptanone",
+    x = "Concentration (ppb)",
+    y = "Intensity"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = .5),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12)
+  )
+
+```
+
+
+## Extrapolation 
+
+```{r}
+extra_anisole <- extrapolate_curve(calibration_anisole)
+extra_heptanone <- extrapolate_curve(calibration_heptanone)
+
+```
+
+```{r}
+plot_extrapolated_curve(extra_anisole, "Extended Calibration Curve — Anisole")
+plot_extrapolated_curve(extra_heptanone, "Extended Calibration Curve — 2-Heptanone")
+
+```
+
+```{r}
+calibration_anisole   <- extra_anisole$full
+calibration_heptanone <- extra_heptanone$full
+
+calibration_table <- list(
+  anisole = calibration_anisole,
+  heptanone = calibration_heptanone
+)
+
+```
+
+# Concentration Prediction 
+
+
+## Prediction Without Scaling the Curve (Baseline)
+
+```{r concentration-prediction}
+datasets <- c("pool", "s1", "s2", "s3", "s4")
+
+concentrations_baseline <- data.frame()
+
+for (sample_name in datasets) {
+  df_sample <- get(sample_name)
+  
+  for (analyte in analytes) {
+    
+    calib <- calibration_table[[analyte]]
+    
+    conc <- interpolate_concentration(
+      intensity = df_sample[[analyte]],
+      calibration_intensity = calib$intensity,
+      calibration_concentration = calib$concentration_original
+    )
+    
+    df_tmp <- df_sample %>%
+      mutate(
+        int = .data[[analyte]],
+        conc_estimated = conc,
+        Sample = sample_name,
+        Analyte = analyte
+      ) %>%
+      select(Sample, Analyte, concentration, int, conc_estimated)
+    
+    concentrations_baseline <- bind_rows(concentrations_baseline, df_tmp)
+  }
+}
+
+concentrations_baseline %>%
+  head(5) %>% 
+  knitr::kable(
+    caption = "Estimated concentrations across datasets (baseline calibration)",
+    col.names = c("Sample", "Analyte", "Spiked Conc. (ppb)",
+                  "Intensity (a.u.)", "Estimated Conc. (ppb)"),
+    digits = 4,
+    align = "lccrr"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center")
+
+```
+
+## Prediction Scaling the Curve (Proposed Method)
+
+```{r concentration-prediction-prop}
+concentrations <- data.frame()
+
+for (sample_name in datasets) {
+  df_sample <- get(sample_name)
+  
+  for (analyte in analytes) {
+    
+    calib <- calibration_table[[analyte]]
+    
+    conc <- interpolate_concentration(
+      intensity = df_sample[[analyte]],
+      calibration_intensity = calib$intensity,
+      calibration_concentration = calib$concentration_harmonized
+    )
+    
+    df_tmp <- df_sample %>%
+      mutate(
+        int = .data[[analyte]],
+        conc_estimated = conc,
+        Sample = sample_name,
+        Analyte = analyte
+      ) %>%
+      select(Sample, Analyte, concentration, int, conc_estimated)
+    
+    concentrations <- bind_rows(concentrations, df_tmp)
+  }
+}
+
+concentrations %>%
+  head(5) %>% 
+  knitr::kable(
+    caption = "Estimated concentrations across datasets (proposed calibration)",
+    col.names = c("Sample", "Analyte", "Spiked Conc. (ppb)",
+                  "Intensity (a.u.)", "Estimated Conc. (ppb)"),
+    digits = 4,
+    align = "lccrr"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE, position = "center")
+
+```
+
+
+# Error Calculation
+
+
+## Anisole (Non-Endogenous)
+
+
+In this section we evaluate the accuracy of the estimated concentrations obtained from the calibration models.  
+For each measurement we define the **error** as:
+
+$$
+\varepsilon_i = \widehat{C}_i - C_i,
+$$
+
+where  
+- \(C_i\) = true (spiked) concentration, since anisole is non endogenous analyte  
+- \(\widehat{C}_i\) = estimated concentration from the calibration model.
+
+To summarise the error magnitude we use the **root-mean-square error (RMSE)**:
+
+\[
+\mathrm{RMSE}
+  = \sqrt{\frac{1}{n} \sum_i (\,\widehat{C}_i - C_i\,)^2 }.
+\]
+
+RMSE gives a single value (in ppb) that increases when predictions deviate from the true concentration.  
+We compare RMSE between:
+
+- **Baseline model** (using the original SU calibration curve)  
+- **Proposed model** (using the harmonised and scaled calibration curve)
+
+for:
+- Pool sample  
+- Individual samples (s1–s3, s4)  
+- Global error across all samples  
+- Each concentration level  
+
+The following tables and plots present these comparisons.
+
+
+```{r}
+df_baseline <- concentrations_baseline %>%
+  filter(Analyte == "anisole") %>%
+  mutate(
+    error = conc_estimated - concentration,
+    Method = "Baseline"
+  )
+
+df_proposed <- concentrations %>%
+  filter(Analyte == "anisole") %>%
+  mutate(
+    error = conc_estimated - concentration,
+    Method = "Proposed"
+  )
+
+df_error_a <- bind_rows(df_baseline, df_proposed)
+```
+
+### RMSE in Pool
+
+```{r}
+df_pool <- df_error_a %>% filter(Sample == "pool")
+
+rmse_pool <- df_pool %>%
+  group_by(Method) %>%
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm = TRUE)),
+    .groups = "drop"
+  )
+
+rmse_pool %>%
+  knitr::kable(
+    caption = "RMSE in pool (anisole)",
+    col.names = c("Method", "RMSE (ppb)")
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+
+### RMSE in Individual Samples
+
+```{r}
+rmse_global <- df_error_a %>%
+  filter(Sample %in% c("s1","s2","s3","s4")) %>%
+  group_by(Method) %>%
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm = TRUE)),
+    .groups = "drop"
+  )
+
+rmse_global %>%
+  knitr::kable(
+    caption = "Global RMSE (anisole)",
+    col.names = c("Method", "RMSE (ppb)")
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
+```
+
+### RMSE vs Concentration Level
+
+```{r}
+rmse_levels <- df_error_a %>%
+  filter(Sample %in% c("s1","s2","s3","s4"))%>%
+  group_by(Method, concentration) %>%
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm = TRUE)),
+    .groups = "drop"
+  )
+
+```
+
+```{r}
+ggplot(rmse_levels, aes(x = concentration, y = RMSE, color = Method)) +
+  geom_point(size = 3) +
+  geom_line(size = 1) +
+  scale_color_manual(values = model_colors) +
+  labs(
+    title = "RMSE vs Concentration (Anisole)",
+    x = "True Concentration (ppb)",
+    y = "RMSE (ppb)"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank()
+  )
+
+```
+
+### Predicted vs True Concentration
+
+```{r}
+df_plot <- df_error_a%>%
+  filter(Sample %in% c("s1","s2","s3","s4")) %>%
+  mutate(
+    conc_true = concentration,
+    conc_pred = conc_estimated
+  )
+
+ggplot(df_plot, aes(x = conc_true, y = conc_pred,
+                    color = Method, shape = Method)) +
+  geom_point(size = 2.8, alpha = 0.85) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", linewidth = 0.8) +
+  scale_color_manual(values = model_colors) +
+  scale_shape_manual(values = model_shapes) +
+  labs(
+    title = "Predicted vs True Concentration (Anisole)",
+    x = "True (ppb)",
+    y = "Predicted (ppb)"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank()
+  )
+
+```
+
+## 2-Heptanone (Endogenous)
+
+Unlike anisole, **2-heptanone is naturally present** in urine without spiking.  
+Therefore, to compute the prediction error, we must estimate the **endogenous (baseline) concentration** \(C_0\) for each sample.
+
+We treat each sample as a shifted version of the SU calibration curve.  
+Using the affine alignment model:
+
+$$
+f_{\text{sample}}(C_{\text{total}}) \approx f_{\text{SU}}\!\left(\alpha \cdot C_{\text{total}}\right),
+$$
+
+we obtain:
+
+- \(C_0\): endogenous concentration (offset)
+- \(\alpha\): scale factor due to matrix effects
+
+The **true concentration** for each point becomes:
+
+$$
+C_{\text{total}} = C + C_0
+$$
+
+All RMSE calculations use this corrected concentration.
+
+
+
+### Endogenous Concentration Estimation 
+
+```{r}
+analyte <- "heptanone"
+
+samples <- c("pool", "s1", "s2", "s3", "s4")
+table_endogenous <- data.frame()
+df_total_h <- data.frame()
+
+for (s in samples) {
+  
+  df_sample <- get(s) %>%
+    select(
+      concentration,
+      intensity     = !!sym(analyte)
+    )
+  
+  res <- harmonize(
+    df_target   = df_sample,
+    df_sub      = su_heptanone
+  )
+  
+  table_endogenous <- rbind(
+    table_endogenous,
+    data.frame(
+      Sample   = s,
+      Analyte  = analyte,
+      C0_ppb   = round(res$shift, 3),
+      C0_error = round(res$shift_error, 3)
+    )
+  )
+  
+}
+
+knitr::kable(
+  table_endogenous,
+  caption = "Estimated endogenous concentrations (2-Heptanone)",
+  col.names = c("Sample","Analyte","C0 (ppb)","Error")
+) %>%
+  kableExtra::kable_styling(full_width = FALSE)
+
+```
+
+
+### Error Calculation
+
+*Same RMSE approach as anisole, but using total concentration.*
+
+```{r}
+
+# Extract endogenous shifts per sample
+df_shifts_h <- table_endogenous %>%
+  select(Sample, C0_ppb)
+
+# Baseline
+df_baseline_h <- concentrations_baseline %>%
+  filter(Analyte == "heptanone") %>%
+  left_join(df_shifts_h, by = "Sample") %>%
+  mutate(
+    conc_hept_total = concentration + C0_ppb,
+    error           = conc_estimated - conc_hept_total,
+    Method          = "Baseline"
+  )
+
+# Proposed
+df_proposed_h <- concentrations %>%
+  filter(Analyte == "heptanone") %>%
+  left_join(df_shifts_h, by = "Sample") %>%
+  mutate(
+    conc_hept_total = concentration + C0_ppb,
+    error           = conc_estimated - conc_hept_total,
+    Method          = "Proposed"
+  )
+
+# Combined
+df_error_h <- bind_rows(df_baseline_h, df_proposed_h)
+
+```
+
+
+### RMSE in pool
+
+```{r}
+rmse_pool_h <- df_error_h %>%
+  filter(Sample == "pool") %>%
+  group_by(Method) %>%
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm=TRUE)),
+    .groups="drop"
+  )
+
+knitr::kable(
+  rmse_pool_h,
+  caption = "RMSE in pool (2-Heptanone)",
+  col.names = c("Method","RMSE (ppb)")
+) %>% kableExtra::kable_styling(full_width = FALSE)
+```
+
+### RMSE in Individual Samples
+
+```{r}
+rmse_global_h <- df_error_h %>%
+  filter(Sample %in% c("s1","s2","s3","s4")) %>%
+  group_by(Method) %>%
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm=TRUE)),
+    .groups="drop"
+  )
+
+knitr::kable(
+  rmse_global_h,
+  caption = "Global RMSE (2-Heptanone)",
+  col.names = c("Method","RMSE (ppb)")
+) %>% kableExtra::kable_styling(full_width = FALSE)
+```
+
+### RMSE vs Concentration Level 
+*Grouped by spiked concentration*
+
+```{r}
+rmse_levels_h <- df_error_h %>%
+  filter(Sample %in% c("s1","s2","s3","s4"))%>%
+  group_by(Method, concentration) %>%  
+  summarise(
+    RMSE = sqrt(mean(error^2, na.rm=TRUE)),
+    SD = sd(error, na.rm=TRUE),
+    .groups = "drop"
+  )
+
+ggplot(rmse_levels_h, aes(x = concentration, y = RMSE, color = Method)) +
+  geom_point(size = 3) +
+  geom_line(size = 1) +
+  geom_errorbar(aes(ymin = RMSE - SD, ymax = RMSE + SD),
+                width = 0.2) +
+  scale_color_manual(values = model_colors) +
+  labs(
+    title = "RMSE vs Spike Concentration (2-Heptanone)",
+    x = "Nominal Spike (ppb)",
+    y = "RMSE (ppb)"
+  ) +
+  theme_minimal(base_size = 10)
+```
+
+
+### Predicted vs True (Total) Concentration
+
+```{r}
+df_plot_h <- df_error_h %>%
+  filter(Sample %in% c("s1","s2","s3","s4")) %>%
+  mutate(
+    conc_true = conc_hept_total,
+    conc_pred = conc_estimated
+  )
+
+ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
+                      color = Method, shape = Method)) +
+  geom_point(size = 2.8, alpha = 0.85) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", linewidth = 0.8) +
+  scale_color_manual(values = model_colors) +
+  scale_shape_manual(values = model_shapes) +
+  labs(
+    title = "Predicted vs True Total Concentration (2-Heptanone)",
+    x = "True Total (ppb)",
+    y = "Predicted (ppb)"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position="bottom",
+    legend.title=element_blank()
+  )
+```
+
+## Discussion
+
+The error is lower with our methodology in anisole but not in heptanone. 
+This is probably due to the fact that the effect of the matrix is lower for 2-heptanone. 
+
+Since we have a whole calibration for each individual sample, we can estimate the scale wrt the synthetic urine. 
+
+```{r}
+samples  <- c("pool","s1","s2","s3","s4")
+analytes <- c("anisole","heptanone")
+
+scale_table <- data.frame()
+
+for (sample in samples) {
+  
+  df_target <- get(sample)
+  
+  for (an in analytes) {
+    
+    df_su  <- su %>% select(concentration, intensity = !!sym(an))
+    df_tar <- df_target %>% select(concentration, intensity = !!sym(an))
+    
+    res <- harmonize(df_tar, df_su)
+    
+    scale_table <- rbind(
+      scale_table,
+      data.frame(
+        Sample  = sample,
+        Analyte = an,
+        Scale   = round(res$scale, 3)
+      )
+    )
+  }
+}
+
+```
+
+```{r, fig.height=4, fig.width=9}
+make_plot <- function(analyte){
+  df <- scale_table %>% filter(Analyte == analyte)
+
+  scale_pool <- df %>% filter(Sample=="pool") %>% pull(Scale)
+  df_plot    <- df %>% filter(Sample!="pool")
+
+  ggplot(df_plot, aes(Sample, Scale)) +
+    geom_hline(yintercept=1, color="grey40", linewidth=0.8) +
+    geom_hline(yintercept=scale_pool, color=analyte_colors[analyte],
+               linewidth=0.8, linetype="dashed") +
+    geom_point(color=analyte_colors[analyte], size=4) +
+    labs(subtitle=display_name(analyte), x="Sample", y="Scale") +
+    theme_minimal(base_size=14) +
+    theme(
+      plot.subtitle = element_text(face="bold", hjust=0.5)
+    )
+}
+
+p1 <- make_plot("anisole")
+p2 <- make_plot("heptanone")
+
+p1 + p2 + plot_annotation(
+  title="Scaling Factors for All Samples",
+  subtitle="Dashed line = Pool scale"
+)
+```
+
+For anisole, the individual samples deviate more from the pool reference, while for 2-heptanone the scaling factors stay much closer to 1 (synthetic urine), indicating that matrix effects are smaller and the harmonization may not be necessary or helpful in this case. 
+

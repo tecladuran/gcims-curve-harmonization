@@ -1,0 +1,217 @@
+---
+title: "Animation of Optimization Procedure"
+author: "Tecla Duran Fort"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+  github_document:
+    toc: true
+    toc_depth: 3
+    md_extensions: +raw_html
+  html_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: false
+always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6, 
+  fig.height = 4
+)
+
+library(dplyr)
+library(ggplot2)
+library(tibble)
+source("../../load_harmonization_tools.R")
+
+model_colors <- c("Baseline" = "navy", "Proposed" = "#D55E00")
+
+model_shapes <- c(
+  "Baseline" = 16,  
+  "Proposed" = 17  
+)
+```
+
+**FOR CHECK PURPOSES**
+
+
+# 1. Data loading
+
+
+```{r}
+su   <- read.csv("../../data/tables/su.csv")
+pool <- read.csv("../../data/tables/pool.csv")
+
+analytes <- c("anisole", "heptanone")
+
+su <- shift_to_origin(su, analytes)$data #Small correction to force the curve to have 0 intercept
+
+for (a in analytes) {
+  
+  # Subset SU: concentration column is specific for each analyte
+  su_df <- su %>%
+    dplyr::select(
+      concentration = dplyr::all_of(paste0("c_", a)),
+      intensity     = dplyr::all_of(a)
+    )
+  
+  # Subset POOL: a single concentration column and an intensity column per analyte
+  pool_df <- pool %>%
+    dplyr::select(
+      concentration,
+      intensity = dplyr::all_of(a)
+    )
+  
+  # Store in the global environment as su_analyte and pool_analyte
+  assign(paste0("su_", a),   su_df,   envir = .GlobalEnv)
+  assign(paste0("pool_", a), pool_df, envir = .GlobalEnv)
+}
+
+str(su_anisole)
+str(pool_anisole)
+```
+
+## 3.1. Anisole
+
+```{r, echo=TRUE}
+res_anisole <- harmonize(pool_anisole, su_anisole, scale_range = c(0.2, 1))
+```
+
+```{r}
+# Create summary table
+summary_anisole <- tibble::tibble(
+Parameter = c("Scale", "Shift"),
+Value     = c(
+round(res_anisole$scale,  3),
+round(res_anisole$shift,  3)
+),
+Error     = c(
+paste0("±", round(res_anisole$scale_error, 3)),
+paste0("±", round(res_anisole$shift_error, 3))
+),
+Units = c("–", "ppb")
+)
+
+knitr::kable(
+summary_anisole,
+caption = "Harmonization parameters and uncertainty (Anisole)",
+align = "c"
+)
+
+```
+
+```{r}
+plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
+```
+
+
+
+
+```{r}
+scale_seq <- seq(1, res_anisole$scale, length.out = 30)
+
+shift_seq <- seq(0, res_anisole$shift, length.out = 5)
+
+
+for (sc in scale_seq) {
+  p <- plot_harmonization_manual(
+    h = res_anisole,
+    scale_manual = sc,
+    shift_manual = 0,
+    xlim_range = c(0, 30)
+  )
+  
+  print(p)  
+  
+}
+
+
+for (sh in shift_seq) {
+  p <- plot_harmonization_manual(
+    h = res_anisole,
+    scale_manual = res_anisole$scale,
+    shift_manual = sh,
+    xlim_range = c(0, 30)
+  )
+  
+  print(p)   
+  
+
+}
+
+```
+## Heptanone
+
+```{r, echo=TRUE}
+res_heptanone <- harmonize(pool_heptanone, su_heptanone, scale_range = c(0.2, 1))
+```
+
+```{r}
+# Create summary table
+summary_anisole <- tibble::tibble(
+Parameter = c("Scale", "Shift"),
+Value     = c(
+round(res_heptanone$scale,  3),
+round(res_heptanone$shift,  3)
+),
+Error     = c(
+paste0("±", round(res_heptanone$scale_error, 3)),
+paste0("±", round(res_heptanone$shift_error, 3))
+),
+Units = c("–", "ppb")
+)
+
+knitr::kable(
+summary_anisole,
+caption = "Harmonization parameters and uncertainty (Anisole)",
+align = "c"
+)
+
+```
+
+```{r}
+plot_harmonization(res_heptanone, title = "Calibration Harmonization - Anisole")
+```
+
+```{r}
+scale_seq <- seq(1, res_heptanone$scale, length.out = 20)
+
+shift_seq <- seq(0, res_heptanone$shift, length.out = 20)
+
+
+for (sc in scale_seq) {
+  p <- plot_harmonization_manual(
+    h = res_heptanone,
+    scale_manual = sc,
+    shift_manual = 0,
+    xlim_range = c(0, 30)
+  )
+  
+  print(p)  
+  
+}
+
+
+for (sh in shift_seq) {
+  p <- plot_harmonization_manual(
+    h = res_heptanone,
+    scale_manual = res_heptanone$scale,
+    shift_manual = sh,
+    xlim_range = c(0, 30)
+  )
+  
+  print(p)   
+  
+
+}
+
+```
+
+
