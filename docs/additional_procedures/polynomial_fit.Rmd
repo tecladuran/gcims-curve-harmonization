@@ -3,13 +3,13 @@ title: "Polynomial Fit"
 author: "Tecla Duran Fort"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: 3
   github_document:
     toc: true
     toc_depth: 3
     md_extensions: +raw_html
+  pdf_document:
+    toc: yes
+    toc_depth: 3
   html_document:
     
     toc: yes
@@ -24,8 +24,6 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   fig.path = "figures_summary/",
-  fig.width = 6,
-  fig.height = 4,
   dpi = 600
 )
 
@@ -35,6 +33,13 @@ library(tidyr)
 library(purrr)
 
 source("../../load_harmonization_tools.R")
+
+
+analyte_colors <- c(
+  anisole   = "navy",
+  heptanone = "#E0711A"
+)
+
 ```
 
 ```{r, echo=FALSE}
@@ -212,6 +217,8 @@ plot_polynomial_fits <- function(df, models_list) {
 plot_polynomial_fits(su, models_list)
 
 ```
+# Polynomial Degree Election
+
 
 ```{r}
 degrees <- 1:5
@@ -223,64 +230,177 @@ for (analyte in analytes) {
                      paste0("c_", analyte),
                      "concentration")
   
-  # Dataset temporal
   tmp <- su %>%
     select(all_of(conc_var), all_of(analyte)) %>%
     rename(concentration = all_of(conc_var),
-           intensity = all_of(analyte))
+           intensity     = all_of(analyte))
   
-  # ---- Ajustos per graus 1–5 ----
   df_res <- map_df(degrees, function(deg) {
-    form <- as.formula(paste0("intensity ~ poly(concentration, ", deg, ", raw = TRUE) - 1"))
-    fit <- lm(form, data = tmp)
+    fit <- lm(intensity ~ poly(concentration, deg, raw = TRUE) - 1, data = tmp)
     s   <- summary(fit)
     tibble(Degree = deg, R2 = s$r.squared, RSE = s$sigma)
   })
   
-  # ---- Escala per doble eix ----
   max_RSE <- max(df_res$RSE)
-  scale_factor <- max_RSE / 1   # perquè R² max = 1
+  scale_factor <- max_RSE / 1
   
-  # ---- Plot ----
-  p <- ggplot(df_res, aes(x = Degree)) +
-    
-    # RSE (eix dret)
-    geom_line(aes(y = RSE, color = "RSE"), linewidth = 1.2) +
-    geom_point(aes(y = RSE, color = "RSE"), size = 3) +
-    
-    # R² (eix esquerre, transformat)
-    geom_line(aes(y = R2 * scale_factor, color = "R2"), linewidth = 1.2) +
-    geom_point(aes(y = R2 * scale_factor, color = "R2"), size = 3) +
-    
-    scale_color_manual(
-      name = "",
-      values = c("R2" = "navy", "RSE" = "darkorange"),
-      labels = c("R²", "Residual Std. Error")
-    ) +
-    
+  col_an <- analyte_colors[analyte]
+
+  df_plot <- df_res %>%
+    mutate(
+      R2_plot  = R2,         
+      
+      RSE_plot = RSE / max(RSE)   
+      
+    )
+  
+  p <- ggplot(df_plot, aes(x = Degree)) +
+  
+    geom_line(aes(y = RSE_plot), 
+              color = col_an, linewidth = 1.5) +
+    geom_point(aes(y = RSE_plot), 
+               color = col_an, size = 3) +
+  
+  
+    geom_line(aes(y = R2_plot), 
+              color = adjustcolor(col_an, alpha.f = 0.35), linewidth = 1.5) +
+    geom_point(aes(y = R2_plot), 
+               color = adjustcolor(col_an, alpha.f = 0.35), size = 3) +
+  
     scale_y_continuous(
       name = "R²",
-      limits = c(0, max_RSE),
-      sec.axis = sec_axis(~., name = "Residual Std. Error")
+      limits = c(0, 1),
+      sec.axis = sec_axis(
+        ~ . * max(df_res$RSE),
+        name = "Residual Std. Error"
+      )
     ) +
-    
+  
     labs(
       title = paste("Model complexity vs fit quality —", display_name(analyte)),
       x = "Polynomial degree"
     ) +
-    
+  
     theme_minimal(base_size = 14) +
     theme(
       plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-      legend.position = "bottom",
-      axis.title.y = element_text(color = "navy", face = "bold"),
-      axis.title.y.right = element_text(color = "darkorange", face = "bold")
+      legend.position = "none",
+      axis.title.y = element_text(
+        color = adjustcolor(col_an, alpha.f = 0.35),
+        face = "bold"
+      ),
+      axis.title.y.right = element_text(
+        color = col_an,
+        face = "bold"
+      )
     )
   
   print(p)
 }
 
 
+
+
+```
+## Cross Validation 
+
+```{r}
+degrees <- 1:4
+
+cv_results <- purrr::map_df(analytes, function(analyte) {
+
+# Detect concentration variable
+
+conc_var <- ifelse(paste0("c_", analyte) %in% colnames(su),
+paste0("c_", analyte),
+"concentration")
+
+# Build dataset
+
+tmp <- su %>%
+dplyr::select(all_of(conc_var), all_of(analyte)) %>%
+dplyr::rename(
+concentration = all_of(conc_var),
+intensity     = all_of(analyte)
+)
+
+conc_levels <- sort(unique(tmp$concentration))
+
+purrr::map_df(degrees, function(deg) {
+  purrr::map_df(conc_levels, function(cl) {
+  
+    train <- tmp %>% dplyr::filter(concentration != cl)
+    test  <- tmp %>% dplyr::filter(concentration == cl)
+    
+    # Fit without this concentration level
+    fit <- lm(intensity ~ poly(concentration, deg, raw = TRUE) - 1,
+              data = train)
+    
+    # Predict on held-out concentration
+    pred <- predict(fit, newdata = test)
+    
+    rmse <- sqrt(mean((test$intensity - pred)^2))
+    
+    tibble(
+      Analyte = analyte,
+      Degree  = deg,
+      Conc_left_out = cl,
+      RMSE = rmse
+    )
+    })
+  })
+})
+
+# Summarise RMSE per analyte and degree
+
+cv_summary <- cv_results %>%
+dplyr::group_by(Analyte, Degree) %>%
+dplyr::summarise(
+RMSE_mean = mean(RMSE),
+RMSE_sd   = sd(RMSE),
+.groups   = "drop"
+) %>%
+dplyr::mutate(Analyte_label = Analyte)
+
+# Show table
+
+knitr::kable(
+cv_summary %>%
+dplyr::select(Analyte_label, Degree, RMSE_mean, RMSE_sd),
+col.names = c("Analyte", "Degree", "Mean RMSE", "SD RMSE"),
+digits = 4,
+caption = "Cross-validation: leave-one-concentration-out RMSE by polynomial degree"
+)
+
 ```
 
+```{r, fig.width=10}
+ggplot(cv_summary, aes(x = Degree, y = RMSE_mean,
+color = Analyte_label, group = Analyte_label)) +
+
+geom_line(linewidth = 1.1) +
+geom_point(size = 3) +
+geom_errorbar(aes(ymin = RMSE_mean - RMSE_sd,
+ymax = RMSE_mean + RMSE_sd),
+width = 0.15) +
+
+facet_wrap(~ Analyte_label, scales = "free_y") +
+
+scale_color_manual(values = analyte_colors) +
+
+labs(
+title    = "Leave-one-concentration-out cross-validation",
+subtitle = "Prediction RMSE for each polynomial degree",
+x        = "Polynomial degree",
+y        = "RMSE"
+) +
+
+theme_minimal(base_size = 14) +
+theme(
+plot.title   = element_text(size = 16, face = "bold", hjust = 0.5),
+plot.subtitle= element_text(hjust = 0.5)
+)
+
+
+```
 

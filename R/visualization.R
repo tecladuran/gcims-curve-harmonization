@@ -143,7 +143,8 @@ plot_harmonization_manual <- function(
 plot_loss_heatmaps <- function(h,
                                title_prefix = "",
                                scale_window = NULL,
-                               shift_window = NULL) {
+                               shift_window = NULL,
+                               loss_factor = 2) {
   
   if (is.null(h$paraboloid)) {
     stop("No paraboloid fit stored in this harmonization result.")
@@ -157,11 +158,11 @@ plot_loss_heatmaps <- function(h,
     stop("Uncertainty values are NA. Paraboloid fit may have failed.")
   }
   
-  # Default windows = ± 3 × error
+  # Default windows = ± 2 × error
   if (is.null(scale_window)) scale_window <- 2 * scale_err
   if (is.null(shift_window)) shift_window <- 2 * shift_err
   
-  # Define limits centered around optimum
+  # Limits
   scale_min <- h$scale - scale_window
   scale_max <- h$scale + scale_window
   
@@ -176,7 +177,7 @@ plot_loss_heatmaps <- function(h,
       shift >= shift_min, shift <= shift_max
     )
   
-  # Paraboloid coefficients
+  # Paraboloid parameters
   a <- h$paraboloid$a
   b <- h$paraboloid$b
   c <- h$paraboloid$c
@@ -185,7 +186,7 @@ plot_loss_heatmaps <- function(h,
   t0 <- h$shift
   Lmin <- h$loss
   
-  # Compute paraboloid fit on same restricted grid
+  # Paraboloid surface in filtered region
   lg_parab <- lg %>%
     dplyr::mutate(
       loss_parab = Lmin +
@@ -194,17 +195,23 @@ plot_loss_heatmaps <- function(h,
         c * (scale - s0) * (shift - t0)
     )
   
+  contour_level <- loss_factor * Lmin
+  
   # ---------------------------
-  # REAL LOSS HEATMAP
+  # REAL LOSS HEATMAP + white contour
   # ---------------------------
   p_real <- ggplot(lg, aes(x = scale, y = shift, fill = loss)) +
     geom_tile() +
+    geom_contour(aes(z = loss),
+                 breaks = contour_level,
+                 colour = "white",
+                 linewidth = 0.9) +
     geom_point(
       data = data.frame(scale = h$scale, shift = h$shift),
-      aes(x = scale, y = shift),
+      aes(scale, shift),
       inherit.aes = FALSE,
       color = "red",
-      size  = 3
+      size = 3
     ) +
     scale_fill_viridis_c(option = "inferno") +
     labs(
@@ -216,16 +223,20 @@ plot_loss_heatmaps <- function(h,
     theme_minimal(base_size = 14)
   
   # ---------------------------
-  # PARABOLOID LOSS HEATMAP
+  # PARABOLOID LOSS HEATMAP + white contour
   # ---------------------------
   p_parab <- ggplot(lg_parab, aes(x = scale, y = shift, fill = loss_parab)) +
     geom_tile() +
+    geom_contour(aes(z = loss_parab),
+                 breaks = contour_level,
+                 colour = "white",
+                 linewidth = 0.9) +
     geom_point(
       data = data.frame(scale = h$scale, shift = h$shift),
-      aes(x = scale, y = shift),
+      aes(scale, shift),
       inherit.aes = FALSE,
       color = "red",
-      size  = 3
+      size = 3
     ) +
     scale_fill_viridis_c(option = "inferno") +
     labs(
@@ -239,7 +250,6 @@ plot_loss_heatmaps <- function(h,
   list(real = p_real, paraboloid = p_parab)
 }
 
-
 plot_loss_1d <- function(h,
                          param = c("scale", "shift"),
                          range_limit = NULL,
@@ -252,7 +262,7 @@ plot_loss_1d <- function(h,
   if (is.null(h$paraboloid))
     stop("No paraboloid fit available.")
   
-  # Extract optimum
+  # Extract optimum and curvature
   if (param == "scale") {
     a <- h$paraboloid$a
     if (is.na(a)) stop("Paraboloid coefficient 'a' is NA.")
@@ -268,11 +278,10 @@ plot_loss_1d <- function(h,
       dplyr::arrange(.data$scale) %>%
       dplyr::mutate(
         x = .data$scale,
-        loss_parab = h$loss +
-          a * (x - h$scale)^2    
+        loss_parab = h$loss + a * (x - x0)^2
       )
     
-  } else {  # param == shift
+  } else {  # param == "shift"
     
     b <- h$paraboloid$b
     if (is.na(b)) stop("Paraboloid coefficient 'b' is NA.")
@@ -288,14 +297,13 @@ plot_loss_1d <- function(h,
       dplyr::arrange(.data$shift) %>%
       dplyr::mutate(
         x = .data$shift,
-        loss_parab = h$loss +
-          b * (x - h$shift)^2    
+        loss_parab = h$loss + b * (x - x0)^2
       )
   }
   
-  # Default X-limits = ±3×error
+  # Default X-limits = ±2×error
   if (is.null(range_limit)) {
-    range_limit <- c(x0 - 2*err, x0 + 2*err)
+    range_limit <- c(x0 - 2 * err, x0 + 2 * err)
   }
   
   # Subset
@@ -305,8 +313,7 @@ plot_loss_1d <- function(h,
   if (is.null(loss_limits)) {
     ymin <- min(lg_local$loss, lg_local$loss_parab, na.rm = TRUE)
     ymax <- max(lg_local$loss, lg_local$loss_parab, na.rm = TRUE)
-    
-    pad <- 0.10 * (ymax - ymin)
+    pad  <- 0.10 * (ymax - ymin)
     loss_limits <- c(ymin - pad, ymax + pad)
   }
   
@@ -317,6 +324,15 @@ plot_loss_1d <- function(h,
   # Error bounds
   x_lower <- x0 - err
   x_upper <- x0 + err
+  
+  # Corresponding Y-values on the fitted paraboloid
+  if (param == "scale") {
+    y_lower <- h$loss + a * (x_lower - x0)^2
+    y_upper <- h$loss + a * (x_upper - x0)^2
+  } else {
+    y_lower <- h$loss + b * (x_lower - x0)^2
+    y_upper <- h$loss + b * (x_upper - x0)^2
+  }
   
   # Plot
   p <- ggplot(lg_local, aes(x = x)) +
@@ -330,10 +346,11 @@ plot_loss_1d <- function(h,
     geom_vline(aes(xintercept = x0, linetype = "Optimum"),
                color = "red", linewidth = 0.9) +
     
-    geom_point(aes(x = x_lower, y = 2 * h$loss),
-               color = "red", shape = 4, size = 2, stroke = 1.2) +
-    geom_point(aes(x = x_upper, y = 2 * h$loss),
-               color = "red", shape = 4, size = 2, stroke = 1.2) +
+    # The corrected uncertainty markers:
+    geom_point(aes(x = x_lower, y = y_lower),
+               color = "red", shape = 4, size = 3, stroke = 1.3) +
+    geom_point(aes(x = x_upper, y = y_upper),
+               color = "red", shape = 4, size = 3, stroke = 1.3) +
     
     scale_linetype_manual(values = c(
       "Real loss"  = "solid",
@@ -356,3 +373,4 @@ plot_loss_1d <- function(h,
   
   p
 }
+

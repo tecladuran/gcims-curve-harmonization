@@ -1,7 +1,7 @@
 Methodology and Error in Individual Urine Samples
 ================
 Tecla Duran Fort
-2025-12-03
+2025-12-11
 
 - <a href="#load-data" id="toc-load-data">Load Data</a>
 - <a href="#calibration-curves" id="toc-calibration-curves">Calibration
@@ -71,7 +71,9 @@ Tecla Duran Fort
 
 ## Polynomial Fit
 
-![](methodology_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->![](methodology_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+
+<img src="methodology_files/figure-gfm/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
 
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
@@ -237,19 +239,19 @@ res_anisole <- harmonize(pool_anisole, su_anisole)
 
 | Parameter | Value | Error  | Units |
 |:---------:|:-----:|:------:|:-----:|
-|   Scale   | 0.566 | ±0.125 |   –   |
-|   Shift   | 0.879 | ±2.015 |  ppb  |
+|   Scale   | 0.562 | ±0.095 |   –   |
+|   Shift   | 0.930 | ±1.619 |  ppb  |
 
 Harmonization parameters and uncertainty (Anisole)
 
-![](methodology_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
 ### Final Calibration Curves
 
 Calibration curves without harmonization (baseline model) and with pool
 harmonization (proposed model).
 
-![](methodology_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 ## Heptanone
 
@@ -257,10 +259,10 @@ harmonization (proposed model).
 res_heptanone <- harmonize(pool_heptanone, su_heptanone)
 ```
 
-| Parameter | Value | Error | Units |
-|:---------:|:-----:|:-----:|:-----:|
-|   Scale   | 0.814 |  ±NA  |   –   |
-|   Shift   | 2.940 |  ±NA  |  ppb  |
+| Parameter | Value | Error  | Units |
+|:---------:|:-----:|:------:|:-----:|
+|   Scale   | 0.815 | ±0.11  |   –   |
+|   Shift   | 2.940 | ±1.611 |  ppb  |
 
 Harmonization parameters and uncertainty (Heptanone)
 
@@ -268,18 +270,19 @@ Harmonization parameters and uncertainty (Heptanone)
 plot_harmonization(res_heptanone, title = "Calibration Harmonization - 2- Heptanone")
 ```
 
-![](methodology_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
 
 ### Final Calibration Curves
 
 Calibration curves without harmonization (baseline model) and with pool
 harmonization (proposed model).
 
-![](methodology_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
 
 ## Extrapolation
 
-![](methodology_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->![](methodology_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
 
 # Concentration Prediction
 
@@ -437,7 +440,7 @@ anisole
 1012.9812
 </td>
 <td style="text-align:right;">
-11.8705
+11.9554
 </td>
 </tr>
 <tr>
@@ -454,7 +457,7 @@ anisole
 1593.1510
 </td>
 <td style="text-align:right;">
-25.5483
+25.7311
 </td>
 </tr>
 <tr>
@@ -471,7 +474,7 @@ anisole
 21.8578
 </td>
 <td style="text-align:right;">
-0.1971
+0.1985
 </td>
 </tr>
 <tr>
@@ -488,7 +491,7 @@ anisole
 1462.1706
 </td>
 <td style="text-align:right;">
-21.2888
+21.4412
 </td>
 </tr>
 <tr>
@@ -505,7 +508,7 @@ anisole
 642.6036
 </td>
 <td style="text-align:right;">
-6.6893
+6.7372
 </td>
 </tr>
 </tbody>
@@ -580,7 +583,7 @@ Baseline
 Proposed
 </td>
 <td style="text-align:right;">
-2.217788
+2.227297
 </td>
 </tr>
 </tbody>
@@ -616,7 +619,7 @@ Baseline
 Proposed
 </td>
 <td style="text-align:right;">
-3.162367
+3.255603
 </td>
 </tr>
 </tbody>
@@ -624,11 +627,11 @@ Proposed
 
 ### RMSE vs Concentration Level
 
-![](methodology_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-27-1.png" style="display: block; margin: auto;" />
 
 ### Predicted vs True Concentration
 
-![](methodology_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-28-1.png" style="display: block; margin: auto;" />
 
 ## 2-Heptanone (Endogenous)
 
@@ -691,7 +694,7 @@ heptanone
 2.940
 </td>
 <td style="text-align:right;">
-2.255
+1.611
 </td>
 </tr>
 <tr>
@@ -702,10 +705,10 @@ s1
 heptanone
 </td>
 <td style="text-align:right;">
-1.030
+1.005
 </td>
 <td style="text-align:right;">
-0.816
+0.594
 </td>
 </tr>
 <tr>
@@ -716,10 +719,10 @@ s2
 heptanone
 </td>
 <td style="text-align:right;">
-0.553
+0.603
 </td>
 <td style="text-align:right;">
-0.664
+0.435
 </td>
 </tr>
 <tr>
@@ -730,10 +733,10 @@ s3
 heptanone
 </td>
 <td style="text-align:right;">
-3.543
+3.568
 </td>
 <td style="text-align:right;">
-1.274
+0.922
 </td>
 </tr>
 <tr>
@@ -744,10 +747,10 @@ s4
 heptanone
 </td>
 <td style="text-align:right;">
-4.322
+4.271
 </td>
 <td style="text-align:right;">
-1.320
+0.845
 </td>
 </tr>
 </tbody>
@@ -787,7 +790,7 @@ Baseline
 Proposed
 </td>
 <td style="text-align:right;">
-2.269529
+2.265698
 </td>
 </tr>
 </tbody>
@@ -815,7 +818,7 @@ RMSE (ppb)
 Baseline
 </td>
 <td style="text-align:right;">
-2.413547
+2.395582
 </td>
 </tr>
 <tr>
@@ -823,7 +826,7 @@ Baseline
 Proposed
 </td>
 <td style="text-align:right;">
-2.715028
+2.680237
 </td>
 </tr>
 </tbody>
@@ -833,11 +836,11 @@ Proposed
 
 *Grouped by spiked concentration*
 
-![](methodology_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-33-1.png" style="display: block; margin: auto;" />
 
 ### Predicted vs True (Total) Concentration
 
-![](methodology_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+<img src="methodology_files/figure-gfm/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
 
 ## Discussion
 
@@ -848,7 +851,22 @@ for 2-heptanone.
 Since we have a whole calibration for each individual sample, we can
 estimate the scale wrt the synthetic urine.
 
-![](methodology_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+| Sample |  Analyte  | Scale ± Error |
+|:------:|:---------:|:-------------:|
+|  pool  |  anisole  | 0.544 ± 0.090 |
+|  pool  | heptanone | 0.815 ± 0.110 |
+|   s1   |  anisole  | 0.725 ± 0.041 |
+|   s1   | heptanone | 0.942 ± 0.056 |
+|   s2   |  anisole  | 0.661 ± 0.042 |
+|   s2   | heptanone | 0.978 ± 0.045 |
+|   s3   |  anisole  | 0.553 ± 0.082 |
+|   s3   | heptanone | 0.924 ± 0.068 |
+|   s4   |  anisole  | 0.553 ± 0.051 |
+|   s4   | heptanone | 0.779 ± 0.052 |
+
+Estimated scaling factors with uncertainty
+
+<img src="methodology_files/figure-gfm/unnamed-chunk-37-1.png" style="display: block; margin: auto;" />
 
 For anisole, the individual samples deviate more from the pool
 reference, while for 2-heptanone the scaling factors stay much closer to

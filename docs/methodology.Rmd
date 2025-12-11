@@ -3,13 +3,13 @@ title: "Methodology and Error in Individual Urine Samples"
 author: "Tecla Duran Fort"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: 3
   github_document:
     toc: true
     toc_depth: 3
     md_extensions: +raw_html
+  pdf_document:
+    toc: yes
+    toc_depth: 3
   html_document:
     toc: yes
     toc_depth: 3
@@ -21,9 +21,8 @@ always_allow_html: true
 knitr::opts_chunk$set(
   echo = FALSE,
   message = FALSE,
-  warning = FALSE,
-  fig.width = 6, 
-  fig.height = 4
+  warning = FALSE, 
+  fig.align='center'
 )
 
 library(dplyr)
@@ -50,7 +49,7 @@ model_shapes <- c(
 )
 
 ```
-
+\newpage
 
 # Load Data
 
@@ -116,7 +115,7 @@ metrics_poly <- res_poly$metrics_table
 models_list <- res_poly$models
 ```
 
-```{r}
+```{r, fig.height=4, fig.width=5}
 plot_polynomial_fits(su, models_list)
 ```
 
@@ -192,7 +191,7 @@ align = "c"
 
 ```
 
-```{r}
+```{r, fig.height=4, fig.width=6, fig.align='center'}
 plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
 ```
 
@@ -208,7 +207,7 @@ calibration_anisole <- tibble(
 )
 ```
 
-```{r}
+```{r, fig.width=4, fig.height=3, fig.align='center'}
 ggplot(calibration_anisole) +
   
   # Harmonized (navy)
@@ -238,16 +237,16 @@ ggplot(calibration_anisole) +
   ) +
   
   labs(
-    title = "Calibration Curves — Anisole",
+    title = "Calibration Curves - Anisole",
     x = "Concentration (ppb)",
     y = "Intensity"
   ) +
   
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 10) +
   theme(
-    plot.title = element_text(size = 16, face = "bold", hjust = .5),
+    plot.title = element_text(size = 11, face = "bold", hjust = .5),
     legend.position = "bottom",
-    legend.text = element_text(size = 12)
+    legend.text = element_text(size = 9)
   )
 
 ```
@@ -269,8 +268,8 @@ round(res_heptanone$scale,  3),
 round(res_heptanone$shift,  3)
 ),
 Error     = c(
-paste0("±", round(res_heptanone$scale_error["upper"], 3)),
-paste0("±", round(res_heptanone$shift_error["upper"], 3))
+paste0("±", round(res_heptanone$scale_error, 3)),
+paste0("±", round(res_heptanone$shift_error, 3))
 ),
 Units = c("–", "ppb")
 )
@@ -283,7 +282,7 @@ align = "c"
 
 ```
 
-```{r, echo=TRUE}
+```{r, fig.height=4, fig.width=6, echo=TRUE}
 plot_harmonization(res_heptanone, title = "Calibration Harmonization - 2- Heptanone")
 ```
 
@@ -331,16 +330,16 @@ ggplot(calibration_heptanone) +
   ) +
   
   labs(
-    title = "Calibration Curves — 2-Heptanone",
+    title = "Calibration Curves - 2-Heptanone",
     x = "Concentration (ppb)",
     y = "Intensity"
   ) +
   
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 10) +
   theme(
-    plot.title = element_text(size = 16, face = "bold", hjust = .5),
+    plot.title = element_text(size = 11, face = "bold", hjust = .5),
     legend.position = "bottom",
-    legend.text = element_text(size = 12)
+    legend.text = element_text(size = 9)
   )
 
 ```
@@ -354,10 +353,13 @@ extra_heptanone <- extrapolate_curve(calibration_heptanone)
 
 ```
 
-```{r}
-plot_extrapolated_curve(extra_anisole, "Extended Calibration Curve — Anisole")
-plot_extrapolated_curve(extra_heptanone, "Extended Calibration Curve — 2-Heptanone")
+```{r, fig.height=4, fig.width=5}
+plot_extrapolated_curve(extra_anisole, "Extended Calibration Curve - Anisole")
 
+```
+\newline
+```{r, fig.height=4, fig.width=5}
+plot_extrapolated_curve(extra_heptanone, "Extended Calibration Curve - 2-Heptanone")
 ```
 
 ```{r}
@@ -575,7 +577,7 @@ rmse_levels <- df_error_a %>%
 
 ```
 
-```{r}
+```{r, fig.height=4, fig.width=5}
 ggplot(rmse_levels, aes(x = concentration, y = RMSE, color = Method)) +
   geom_point(size = 3) +
   geom_line(size = 1) +
@@ -769,7 +771,7 @@ knitr::kable(
 ### RMSE vs Concentration Level 
 *Grouped by spiked concentration*
 
-```{r}
+```{r, fig.height=4, fig.width=5}
 rmse_levels_h <- df_error_h %>%
   filter(Sample %in% c("s1","s2","s3","s4"))%>%
   group_by(Method, concentration) %>%  
@@ -850,9 +852,10 @@ for (sample in samples) {
     scale_table <- rbind(
       scale_table,
       data.frame(
-        Sample  = sample,
-        Analyte = an,
-        Scale   = round(res$scale, 3)
+        Sample      = sample,
+        Analyte     = an,
+        Scale       = res$scale,
+        Scale_error = res$scale_error
       )
     )
   }
@@ -860,22 +863,69 @@ for (sample in samples) {
 
 ```
 
+```{r}
+library(knitr)
+
+scale_table %>%
+  mutate(
+    Scale_fmt = sprintf("%.3f ± %.3f", Scale, Scale_error)
+  ) %>%
+  select(Sample, Analyte, Scale_fmt) %>%
+  kable(
+    format = "simple",
+    col.names = c("Sample", "Analyte", "Scale ± Error"),
+    align = "ccc",
+    caption = "Estimated scaling factors with uncertainty"
+  )
+
+```
+
+
 ```{r, fig.height=4, fig.width=9}
 make_plot <- function(analyte){
+
   df <- scale_table %>% filter(Analyte == analyte)
 
-  scale_pool <- df %>% filter(Sample=="pool") %>% pull(Scale)
-  df_plot    <- df %>% filter(Sample!="pool")
+  # Pool values
+  scale_pool  <- df %>% filter(Sample=="pool") %>% pull(Scale)
+  error_pool  <- df %>% filter(Sample=="pool") %>% pull(Scale_error)
+
+  # other samples
+  df_plot <- df %>% filter(Sample!="pool")
 
   ggplot(df_plot, aes(Sample, Scale)) +
-    geom_hline(yintercept=1, color="grey40", linewidth=0.8) +
-    geom_hline(yintercept=scale_pool, color=analyte_colors[analyte],
-               linewidth=0.8, linetype="dashed") +
-    geom_point(color=analyte_colors[analyte], size=4) +
-    labs(subtitle=display_name(analyte), x="Sample", y="Scale") +
-    theme_minimal(base_size=14) +
+
+    # Ribbon for pool uncertainty
+    geom_rect(aes(xmin = -Inf, xmax = Inf,
+                  ymin = scale_pool - error_pool,
+                  ymax = scale_pool + error_pool),
+              fill = analyte_colors[analyte],
+              alpha = 0.05,
+              inherit.aes = FALSE) +
+
+    # Reference line y=1
+    geom_hline(yintercept = 1, color="grey40", linewidth=0.8) +
+
+    # Dashed line for pool scale
+    geom_hline(yintercept = scale_pool,
+               color = analyte_colors[analyte],
+               linewidth = 0.8, linetype = "dashed") +
+
+    # Error bars for sample estimates
+    geom_errorbar(aes(ymin = Scale - Scale_error,
+                      ymax = Scale + Scale_error),
+                  width = 0.15,
+                  color = analyte_colors[analyte]) +
+
+    # Points
+    geom_point(color = analyte_colors[analyte], size = 4) +
+
+    labs(subtitle = display_name(analyte),
+         x = "Sample", y = "Scale") +
+
+    theme_minimal(base_size = 10) +
     theme(
-      plot.subtitle = element_text(face="bold", hjust=0.5)
+      plot.subtitle = element_text(face = "bold", hjust = 0.5)
     )
 }
 

@@ -38,11 +38,7 @@
 #' @param optimize_shift Logical. If \code{TRUE}, both scale and shift are optimized.
 #'        If \code{FALSE}, only scale is optimized (shift fixed to zero).
 #'
-#' @param local_scale_win Window half-width (in scale units) for the local
-#'        paraboloid fitting region.
-#'
-#' @param local_shift_win Window half-width (in shift units) for the local
-#'        paraboloid fitting region.
+#' @param loss_factor Numeric. Multiplicative factor defining the local region
 #'
 #' @return A list containing:
 #' \itemize{
@@ -66,15 +62,14 @@
 
 
 harmonize <- function(df_target, df_sub,
-                      scale_range = c(0.2, 1.5),
+                      scale_range = c(0.2, 2),
                       shift_range = c(0, 5),
                       n_scale = 200,
                       n_shift = 200,
                       n_grid = 200,
-                      min_fraction = 0.6,
+                      min_fraction = 0.5,
                       optimize_shift = TRUE,
-                      local_scale_win = 0.1,
-                      local_shift_win = 1) {
+                      loss_factor = 2) {
   
   # 1. Validate & prepare input
   x <- check_and_prepare_input(df_target, df_sub)
@@ -107,8 +102,7 @@ harmonize <- function(df_target, df_sub,
     best_scale = best$best_scale,
     best_shift = best$best_shift,
     best_loss  = best$best_loss,
-    local_scale_win = local_scale_win,
-    local_shift_win = local_shift_win
+    loss_factor = loss_factor
   )
   
   # Output structure
@@ -137,8 +131,6 @@ harmonize <- function(df_target, df_sub,
     optimize_shift = optimize_shift
   )
 }
-
-
 
 
 # AUXILIAR FUNCTIONS
@@ -327,66 +319,124 @@ predict_best_curve <- function(su_grid, df_target, best_scale, best_shift) {
 
 # PARABOLOID AND HESSIAN MATRIX
 
-fit_local_paraboloid <- function(loss_grid, best_scale, best_shift,
-                                 best_loss, local_scale_win, local_shift_win) {
+fit_local_paraboloid <- function(loss_grid,
+                                 best_scale,
+                                 best_shift,
+                                 best_loss,
+                                 loss_factor = 2) {
+  
+  # ------------------------------------------------------------------
+  # SELECT LOCAL REGION AROUND THE MINIMUM
+  #
+  # We take all points satisfying:
+  #       L(scale, shift) <= loss_factor * L_min
+  #
+  # This defines a contour around the minimum consistent with
+  # quadratic approximation theory. It replaces rectangular windows.
+  # ------------------------------------------------------------------
+  
+  if (!is.finite(best_loss) || best_loss <= 0) {
+    return(list(
+      a = NA, b = NA, c = NA,
+      M = matrix(NA, 2, 2),
+      H = matrix(NA, 2, 2),
+      H_inv = matrix(NA, 2, 2),
+      cov = matrix(NA, 2, 2),
+      scale_error = NA,
+      shift_error = NA,
+      loss_threshold = NA
+    ))
+  }
+  
+  loss_threshold <- loss_factor * best_loss
   
   local <- loss_grid %>%
     dplyr::filter(
       is.finite(loss),
-      scale >= best_scale - local_scale_win,
-      scale <= best_scale + local_scale_win,
-      shift >= best_shift - local_shift_win,
-      shift <= best_shift + local_shift_win
+      loss <= loss_threshold
     )
   
-  if (nrow(local) < 10) return(NULL)
+  if (nrow(local) < 10) {
+    return(list(
+      a = NA, b = NA, c = NA,
+      M = matrix(NA, 2, 2),
+      H = matrix(NA, 2, 2),
+      H_inv = matrix(NA, 2, 2),
+      cov = matrix(NA, 2, 2),
+      scale_error = NA,
+      shift_error = NA,
+      loss_threshold = loss_threshold
+    ))
+  }
+  
+  # ------------------------------------------------------------------
+  # FIT QUADRATIC SURFACE AROUND THE MINIMUM
+  # ------------------------------------------------------------------
   
   x1 <- local$scale - best_scale
   x2 <- local$shift - best_shift
-  y  <- local$loss  - best_loss
+  y  <- local$loss - best_loss
   
-  model <- try(
-    lm(y ~ I(x1^2) + I(x2^2) + I(x1*x2) - 1),
-    silent = TRUE
-  )
+  model <- try(lm(y ~ I(x1^2) + I(x2^2) + I(x1 * x2) - 1), silent = TRUE)
   
-  if (inherits(model, "try-error")) return(NULL)
+  if (inherits(model, "try-error")) {
+    return(list(
+      a = NA, b = NA, c = NA,
+      M = matrix(NA, 2, 2),
+      H = matrix(NA, 2, 2),
+      H_inv = matrix(NA, 2, 2),
+      cov = matrix(NA, 2, 2),
+      scale_error = NA,
+      shift_error = NA,
+      loss_threshold = loss_threshold
+    ))
+  }
   
   cf <- coef(model)
   
-  a <- cf["I(x1^2)"]
-  b <- cf["I(x2^2)"]
-  c <- cf["I(x1 * x2)"]
+  a <- unname(cf["I(x1^2)"])
+  b <- unname(cf["I(x2^2)"])
+  c <- unname(cf["I(x1 * x2)"])
   
-  M <- matrix(c(a, c/2, c/2, b), nrow = 2, byrow = TRUE)
+  # Quadratic form matrix
+  M <- matrix(c(a, c/2,
+                c/2, b),
+              nrow = 2, byrow = TRUE)
   
-  eig <- eigen(M)
-  lambda <- eig$values
-  V      <- eig$vectors
+  # Hessian of the loss surface
+  H <- 2 * M
   
-  if (any(lambda <= 0) || best_loss <= 0) {
-    return(list(a=a,b=b,c=c,M=M,eigenvalues=lambda,
-                eigenvectors=V, semiaxes=NA,
-                scale_error=NA, shift_error=NA))
+  
+  H_inv <- tryCatch(solve(H), error = function(e) NULL)
+  
+  if (is.null(H_inv)) {
+    return(list(
+      a = a, b = b, c = c,
+      M = M,
+      H = H,
+      H_inv = matrix(NA, 2, 2),
+      cov = matrix(NA, 2, 2),
+      scale_error = NA,
+      shift_error = NA,
+      loss_threshold = loss_threshold
+    ))
   }
   
-  semiaxes <- sqrt(best_loss / lambda)
+  sigma2 <- best_loss  # justified mathematically
+  cov_mat <- sigma2 * H_inv
   
-  v1 <- V[,1]
-  v2 <- V[,2]
-  
-  proj_scale <- sqrt((semiaxes[1] * v1[1])^2 + (semiaxes[2] * v2[1])^2)
-  proj_shift <- sqrt((semiaxes[1] * v1[2])^2 + (semiaxes[2] * v2[2])^2)
+  scale_error <- sqrt(max(cov_mat[1, 1], 0))
+  shift_error <- sqrt(max(cov_mat[2, 2], 0))
   
   list(
-    a=a, b=b, c=c,
-    M=M,
-    eigenvalues=lambda,
-    eigenvectors=V,
-    semiaxes=semiaxes,
-    scale_error=proj_scale,
-    shift_error=proj_shift,
-    loss_threshold = 2 * best_loss
+    a = a, b = b, c = c,
+    M = M,
+    H = H,
+    H_inv = H_inv,
+    cov = cov_mat,
+    scale_error = scale_error,
+    shift_error = shift_error,
+    loss_threshold = loss_threshold
   )
 }
 

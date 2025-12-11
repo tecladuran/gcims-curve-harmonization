@@ -118,7 +118,7 @@ plot_polynomial_fits <- function(df, models_list) {
         x = min(tmp$concentration),
         y = max(tmp$intensity),
         label = eq_text,
-        hjust = 0, vjust = 1, size = 5,
+        hjust = 0, vjust = 1, size = 3,
         color = "navy"
       ) +
       ggplot2::labs(
@@ -127,14 +127,15 @@ plot_polynomial_fits <- function(df, models_list) {
         y = "Intensity"
       ) +
       ggplot2::theme_minimal()+
-      ggplot2::theme_minimal(base_size = 14) +  
+      ggplot2::theme_minimal(base_size = 9) +  
       ggplot2::theme(
         plot.title = ggplot2::element_text(
           hjust = 0.5,      
           face = "bold",      
-          size = 16   
+          size = 11   
         ))
     
     print(p)
+    cat("\n\n\n")
   }
 }
