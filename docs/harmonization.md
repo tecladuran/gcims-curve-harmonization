@@ -79,11 +79,15 @@ The procedure is:
 
 $$
 C \mapsto \frac{C}{\text{scale}} - \text{shift}
-$$ \* Interpolate the transformed SU curve onto the POOL concentration
-points. \* Compute a loss value. 4. Select the *(scale, shift)* pair
-that **minimises the loss**. 5. Fit a **local quadratic surface
-(paraboloid)** to the loss landscape around the optimum to estimate
-parameter uncertainties.
+$$
+
+- Interpolate the transformed SU curve onto the POOL concentration
+  points.
+- Compute a loss value.
+
+4.  Select the *(scale, shift)* pair that **minimises the loss**.
+5.  Fit a **local quadratic surface (paraboloid)** to the loss landscape
+    around the optimum to estimate parameter uncertainties.
 
 ### Loss function
 
@@ -92,19 +96,15 @@ optional variance-normalisation denominators $D_i$, the loss for a
 candidate pair $(\text{scale}, \text{shift})$ is defined as:
 
 $$
-L(\text{scale}, \text{shift})
-=
-\frac{1}{n}
-\sum_{i=1}^{n}
-\frac{\left(I_i - \hat{I}_i\right)^2}{D_i}.
+L(\text{scale}, \text{shift}) = \frac{1}{n} \sum_{i=1}^{n} 
+\frac{(I_i - \hat{I}_i)^2}{D_i}.
 $$
 
 The denominator $D_i$ corresponds to the estimated variance at each
 concentration level:
 
 $$
-D_i =
-\begin{cases}
+D_i = \begin{cases}
 \sigma^2(C_i), & \text{if at least two replicate points exist at concentration } C_i, \\[6pt]
 1, & \text{otherwise}.
 \end{cases}
@@ -114,18 +114,17 @@ Thus, whenever multiple measurements exist at the same concentration
 $C_i$, the empirical variance  
 $\sigma^2(C_i)$ is used to normalise the residuals.
 
-However, **in our dataset every concentration level has more than one
-replicate**, so  
+However, in our dataset every concentration level has more than one
+replicate, so  
 $\sigma^2(C_i)$ is always available.  
-Consequently, **the loss actually used throughout this work is the fully
-variance-weighted form**:
+Consequently, the loss actually used throughout this work is the fully
+variance-weighted form:
 
 $$
-L(\text{scale}, \text{shift})
-=
+L(\text{scale}, \text{shift}) =
 \frac{1}{n}
 \sum_{i=1}^{n}
-\frac{\left(I_i - \hat{I}_i\right)^2}{\sigma^2(C_i)}.
+\frac{(I_i - \hat{I}_i)^2}{\sigma^2(C_i)}.
 $$
 
 ### Quadratic model (local paraboloid approximation)
@@ -134,8 +133,7 @@ Locally around the optimum $(s_0, t_0)$, the normalised loss function is
 expanded up to second order:
 
 $$
-L(s,t) \approx 
-L_{\min}
+L(s,t) \approx L_{\min}
 + a\,(s-s_0)^2
 + b\,(t-t_0)^2
 + c\,(s-s_0)(t-t_0).
