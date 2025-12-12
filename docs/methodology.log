@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.3.31)  11 DEC 2025 10:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.3.31)  12 DEC 2025 14:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -674,29 +674,29 @@ LaTeX Font Info:    Trying to load font information for TS1+lmtt on input line
 (/usr/share/texmf/tex/latex/lm/ts1lmtt.fd
 File: ts1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-<methodology_files/figure-latex/unnamed-chunk-6-1.pdf, id=69, 469.755pt x 325.2
-15pt>
+<methodology_files/figure-latex/unnamed-chunk-6-1.pdf, id=73, 361.35pt x 289.08
+pt>
 File: methodology_files/figure-latex/unnamed-chunk-6-1.pdf Graphic file (type p
 df)
 <use methodology_files/figure-latex/unnamed-chunk-6-1.pdf>
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-6-1.pdf  
 used on input line 168.
-(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-<methodology_files/figure-latex/unnamed-chunk-6-2.pdf, id=70, 469.755pt x 325.2
-15pt>
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+<methodology_files/figure-latex/unnamed-chunk-6-2.pdf, id=74, 361.35pt x 289.08
+pt>
 File: methodology_files/figure-latex/unnamed-chunk-6-2.pdf Graphic file (type p
 df)
 <use methodology_files/figure-latex/unnamed-chunk-6-2.pdf>
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-6-2.pdf  
 used on input line 170.
-(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
 [2 <./methodology_files/figure-latex/unnamed-chunk-6-1.pdf>]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
 85.
 (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 ) [3 <./methodology_files/figure-latex/unnamed-chunk-6-2.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-11-1.pdf, id=102, 433.62pt x 289.
+<methodology_files/figure-latex/unnamed-chunk-11-1.pdf, id=107, 433.62pt x 289.
 08pt>
 File: methodology_files/figure-latex/unnamed-chunk-11-1.pdf Graphic file (type 
 pdf)
@@ -704,7 +704,7 @@ pdf)
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-11-1.pdf 
  used on input line 230.
 (pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
-<methodology_files/figure-latex/unnamed-chunk-13-1.pdf, id=103, 289.08pt x 216.
+<methodology_files/figure-latex/unnamed-chunk-13-1.pdf, id=108, 289.08pt x 216.
 81pt>
 File: methodology_files/figure-latex/unnamed-chunk-13-1.pdf Graphic file (type 
 pdf)
@@ -712,8 +712,9 @@ pdf)
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-13-1.pdf 
  used on input line 239.
 (pdftex.def)             Requested size: 289.09251pt x 216.81938pt.
-[4 <./methodology_files/figure-latex/unnamed-chunk-11-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-16-1.pdf, id=120, 433.62pt x 289.
+[4 <./methodology_files/figure-latex/unnamed-chunk-11-1.pdf> <./methodology_fil
+es/figure-latex/unnamed-chunk-13-1.pdf>]
+<methodology_files/figure-latex/unnamed-chunk-16-1.pdf, id=131, 433.62pt x 289.
 08pt>
 File: methodology_files/figure-latex/unnamed-chunk-16-1.pdf Graphic file (type 
 pdf)
@@ -721,8 +722,7 @@ pdf)
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-16-1.pdf 
  used on input line 272.
 (pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
-[5 <./methodology_files/figure-latex/unnamed-chunk-13-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-18-1.pdf, id=133, 469.755pt x 325
+<methodology_files/figure-latex/unnamed-chunk-18-1.pdf, id=132, 469.755pt x 325
 .215pt>
 File: methodology_files/figure-latex/unnamed-chunk-18-1.pdf Graphic file (type 
 pdf)
@@ -730,90 +730,112 @@ pdf)
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-18-1.pdf 
  used on input line 281.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[6 <./methodology_files/figure-latex/unnamed-chunk-16-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-20-1.pdf, id=149, 469.755pt x 325
-.215pt>
+[5 <./methodology_files/figure-latex/unnamed-chunk-16-1.pdf>]
+<methodology_files/figure-latex/unnamed-chunk-20-1.pdf, id=149, 361.35pt x 289.
+08pt>
 File: methodology_files/figure-latex/unnamed-chunk-20-1.pdf Graphic file (type 
 pdf)
 <use methodology_files/figure-latex/unnamed-chunk-20-1.pdf>
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-20-1.pdf 
  used on input line 286.
-(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[7 <./methodology_files/figure-latex/unnamed-chunk-18-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-20-2.pdf, id=162, 469.755pt x 325
-.215pt>
-File: methodology_files/figure-latex/unnamed-chunk-20-2.pdf Graphic file (type 
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+[6 <./methodology_files/figure-latex/unnamed-chunk-18-1.pdf>]
+<methodology_files/figure-latex/unnamed-chunk-21-1.pdf, id=161, 361.35pt x 289.
+08pt>
+File: methodology_files/figure-latex/unnamed-chunk-21-1.pdf Graphic file (type 
 pdf)
-<use methodology_files/figure-latex/unnamed-chunk-20-2.pdf>
-Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-20-2.pdf 
+<use methodology_files/figure-latex/unnamed-chunk-21-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-21-1.pdf 
  used on input line 288.
-(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[8 <./methodology_files/figure-latex/unnamed-chunk-20-1.pdf>] [9 <./methodology
-_files/figure-latex/unnamed-chunk-20-2.pdf>]
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+[7 <./methodology_files/figure-latex/unnamed-chunk-20-1.pdf> <./methodology_fil
+es/figure-latex/unnamed-chunk-21-1.pdf>]
 Underfull \hbox (badness 10000) in paragraph at lines 362--364
 
  []
 
-<methodology_files/figure-latex/unnamed-chunk-26-1.pdf, id=188, 361.35pt x 289.
+[8]
+<methodology_files/figure-latex/unnamed-chunk-27-1.pdf, id=196, 361.35pt x 289.
 08pt>
-File: methodology_files/figure-latex/unnamed-chunk-26-1.pdf Graphic file (type 
-pdf)
-<use methodology_files/figure-latex/unnamed-chunk-26-1.pdf>
-Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-26-1.pdf 
- used on input line 406.
-(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
-[10]
-<methodology_files/figure-latex/unnamed-chunk-27-1.pdf, id=206, 469.755pt x 325
-.215pt>
 File: methodology_files/figure-latex/unnamed-chunk-27-1.pdf Graphic file (type 
 pdf)
 <use methodology_files/figure-latex/unnamed-chunk-27-1.pdf>
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-27-1.pdf 
+ used on input line 406.
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+<methodology_files/figure-latex/unnamed-chunk-28-1.pdf, id=197, 469.755pt x 325
+.215pt>
+File: methodology_files/figure-latex/unnamed-chunk-28-1.pdf Graphic file (type 
+pdf)
+<use methodology_files/figure-latex/unnamed-chunk-28-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-28-1.pdf 
  used on input line 412.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[11 <./methodology_files/figure-latex/unnamed-chunk-26-1.pdf>] [12 <./methodolo
-gy_files/figure-latex/unnamed-chunk-27-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-32-1.pdf, id=232, 361.35pt x 289.
+[9 <./methodology_files/figure-latex/unnamed-chunk-27-1.pdf>] [10 <./methodolog
+y_files/figure-latex/unnamed-chunk-28-1.pdf>]
+<methodology_files/figure-latex/unnamed-chunk-33-1.pdf, id=228, 361.35pt x 289.
 08pt>
-File: methodology_files/figure-latex/unnamed-chunk-32-1.pdf Graphic file (type 
-pdf)
-<use methodology_files/figure-latex/unnamed-chunk-32-1.pdf>
-Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-32-1.pdf 
- used on input line 502.
-(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
-[13]
-<methodology_files/figure-latex/unnamed-chunk-33-1.pdf, id=246, 469.755pt x 325
-.215pt>
 File: methodology_files/figure-latex/unnamed-chunk-33-1.pdf Graphic file (type 
 pdf)
 <use methodology_files/figure-latex/unnamed-chunk-33-1.pdf>
 Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-33-1.pdf 
+ used on input line 502.
+(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+[11]
+<methodology_files/figure-latex/unnamed-chunk-34-1.pdf, id=241, 469.755pt x 325
+.215pt>
+File: methodology_files/figure-latex/unnamed-chunk-34-1.pdf Graphic file (type 
+pdf)
+<use methodology_files/figure-latex/unnamed-chunk-34-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-34-1.pdf 
  used on input line 508.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[14 <./methodology_files/figure-latex/unnamed-chunk-32-1.pdf> <./methodology_fi
-les/figure-latex/unnamed-chunk-33-1.pdf>]
-<methodology_files/figure-latex/unnamed-chunk-36-1.pdf, id=267, 650.43pt x 289.
-08pt>
-File: methodology_files/figure-latex/unnamed-chunk-36-1.pdf Graphic file (type 
+[12 <./methodology_files/figure-latex/unnamed-chunk-33-1.pdf> <./methodology_fi
+les/figure-latex/unnamed-chunk-34-1.pdf>]
+Overfull \hbox (41.85672pt too wide) in alignment at lines 540--548
+ [] [] [] [] [] 
+ []
+
+<methodology_files/figure-latex/unnamed-chunk-40-1.pdf, id=262, 469.755pt x 325
+.215pt>
+File: methodology_files/figure-latex/unnamed-chunk-40-1.pdf Graphic file (type 
 pdf)
-<use methodology_files/figure-latex/unnamed-chunk-36-1.pdf>
-Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-36-1.pdf 
- used on input line 543.
+<use methodology_files/figure-latex/unnamed-chunk-40-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-40-1.pdf 
+ used on input line 560.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+[13]
+<methodology_files/figure-latex/unnamed-chunk-41-1.pdf, id=270, 469.755pt x 325
+.215pt>
+File: methodology_files/figure-latex/unnamed-chunk-41-1.pdf Graphic file (type 
+pdf)
+<use methodology_files/figure-latex/unnamed-chunk-41-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-41-1.pdf 
+ used on input line 562.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+[14 <./methodology_files/figure-latex/unnamed-chunk-40-1.pdf>]
+<methodology_files/figure-latex/unnamed-chunk-44-1.pdf, id=283, 650.43pt x 289.
+08pt>
+File: methodology_files/figure-latex/unnamed-chunk-44-1.pdf Graphic file (type 
+pdf)
+<use methodology_files/figure-latex/unnamed-chunk-44-1.pdf>
+Package pdftex.def Info: methodology_files/figure-latex/unnamed-chunk-44-1.pdf 
+ used on input line 597.
 (pdftex.def)             Requested size: 469.76817pt x 208.78584pt.
-[15 <./methodology_files/figure-latex/unnamed-chunk-36-1.pdf>] (./methodology.a
-ux)
+[15 <./methodology_files/figure-latex/unnamed-chunk-41-1.pdf>] [16 <./methodolo
+gy_files/figure-latex/unnamed-chunk-44-1.pdf>] (./methodology.aux)
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 15982 strings out of 480247
- 258562 string characters out of 5896151
- 585278 words of memory out of 5000000
- 33446 multiletter control sequences out of 15000+600000
- 529330 words of font info for 113 fonts, out of 8000000 for 9000
+ 16014 strings out of 480247
+ 259737 string characters out of 5896151
+ 586476 words of memory out of 5000000
+ 33468 multiletter control sequences out of 15000+600000
+ 529413 words of font info for 114 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 74i,7n,77p,1008b,451s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 74i,7n,77p,1008b,440s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dv
 ips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share
 /texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm
@@ -826,10 +848,10 @@ ublic/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm/lmr17.pfb></usr/shar
 e/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/type1/public/lm/
 lmri10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf
 /fonts/type1/public/lm/lmtt10.pfb>
-Output written on methodology.pdf (15 pages, 336297 bytes).
+Output written on methodology.pdf (16 pages, 347665 bytes).
 PDF statistics:
- 449 PDF objects out of 1000 (max. 8388607)
- 374 compressed objects within 4 object streams
- 84 named destinations out of 1000 (max. 500000)
- 35098 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 486 PDF objects out of 1000 (max. 8388607)
+ 405 compressed objects within 5 object streams
+ 90 named destinations out of 1000 (max. 500000)
+ 35124 words of extra memory for PDF output out of 35830 (max. 10000000)
 

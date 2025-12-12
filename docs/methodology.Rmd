@@ -29,6 +29,7 @@ library(dplyr)
 library(ggplot2)
 library(tibble)
 library(patchwork)
+library(tidyr)
 
 source("../load_harmonization_tools.R")
 
@@ -357,7 +358,7 @@ extra_heptanone <- extrapolate_curve(calibration_heptanone)
 plot_extrapolated_curve(extra_anisole, "Extended Calibration Curve - Anisole")
 
 ```
-\newline
+
 ```{r, fig.height=4, fig.width=5}
 plot_extrapolated_curve(extra_heptanone, "Extended Calibration Curve - 2-Heptanone")
 ```
@@ -403,13 +404,13 @@ for (sample_name in datasets) {
         Sample = sample_name,
         Analyte = analyte
       ) %>%
-      select(Sample, Analyte, concentration, int, conc_estimated)
+      select(SampleID, Sample, Analyte, concentration, int, conc_estimated)
     
     concentrations_baseline <- bind_rows(concentrations_baseline, df_tmp)
   }
 }
 
-concentrations_baseline %>%
+concentrations_baseline%>% select(-SampleID) %>%
   head(5) %>% 
   knitr::kable(
     caption = "Estimated concentrations across datasets (baseline calibration)",
@@ -447,13 +448,13 @@ for (sample_name in datasets) {
         Sample = sample_name,
         Analyte = analyte
       ) %>%
-      select(Sample, Analyte, concentration, int, conc_estimated)
+      select(SampleID, Sample, Analyte, concentration, int, conc_estimated)
     
     concentrations <- bind_rows(concentrations, df_tmp)
   }
 }
 
-concentrations %>%
+concentrations %>% select(-SampleID) %>%
   head(5) %>% 
   knitr::kable(
     caption = "Estimated concentrations across datasets (proposed calibration)",
@@ -796,6 +797,7 @@ ggplot(rmse_levels_h, aes(x = concentration, y = RMSE, color = Method)) +
 ```
 
 
+
 ### Predicted vs True (Total) Concentration
 
 ```{r}
@@ -823,6 +825,201 @@ ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
     legend.position="bottom",
     legend.title=element_blank()
   )
+```
+
+```{r}
+# -------UNIFIED TABLE WITH ALL PREDICTIONS ---------
+df_C0 <- table_endogenous %>%
+  select(
+    Sample,
+    Analyte,
+    Estimated_C0 = C0_ppb,
+    Estimated_C0_error = C0_error
+  )
+
+df_base <- concentrations_baseline %>%
+  left_join(df_C0, by = c("Sample", "Analyte")) %>%
+  mutate(
+    Estimated_C0 = ifelse(is.na(Estimated_C0), 0, Estimated_C0),
+    Estimated_C0_error = ifelse(is.na(Estimated_C0_error), 0, Estimated_C0_error),
+    total_concentration = concentration + Estimated_C0
+  ) %>%
+  select(
+    SampleID,
+    Sample,
+    Analyte,
+    spiked_concentration = concentration,
+    Estimated_C0,
+    Estimated_C0_error,
+    total_concentration,
+    intensity = int,
+    predicted_baseline = conc_estimated
+  )
+
+df_prop <- concentrations %>%
+  left_join(df_C0, by = c("Sample", "Analyte")) %>%
+  mutate(
+    Estimated_C0 = ifelse(is.na(Estimated_C0), 0, Estimated_C0),
+    Estimated_C0_error = ifelse(is.na(Estimated_C0_error), 0, Estimated_C0_error)
+  ) %>%
+  select(
+    SampleID,
+    Sample,
+    Analyte,
+    predicted_proposed = conc_estimated
+  )
+
+
+final_table <- df_base %>%
+  left_join(
+    df_prop,
+    by = c("SampleID", "Sample", "Analyte")
+  ) %>%
+  arrange(Analyte, Sample, spiked_concentration)
+
+final_table <- final_table %>%
+  mutate(
+    error_baseline = predicted_baseline - total_concentration,
+    error_proposed = predicted_proposed - total_concentration,
+    abs_error_baseline = abs(error_baseline),
+    abs_error_proposed = abs(error_proposed)
+  )
+
+```
+
+
+## Model Comparison 
+
+### Statistical test
+
+Wilcoxon paired test
+
+**ANISOLE**
+
+```{r}
+df_anisole <- final_table %>%
+  filter(Analyte == "anisole")
+
+wilcox_anisole <- wilcox.test(
+  df_anisole$abs_error_baseline,
+  df_anisole$abs_error_proposed,
+  paired = TRUE,
+  exact  = FALSE
+)
+
+wilcox_anisole
+
+```
+
+**HEPTANONE**
+
+```{r}
+df_heptanone <- final_table %>%
+  filter(Analyte == "heptanone")
+
+wilcox_heptanone <- wilcox.test(
+  df_heptanone$abs_error_baseline,
+  df_heptanone$abs_error_proposed,
+  paired = TRUE,
+  exact  = FALSE
+)
+
+wilcox_heptanone
+
+```
+```{r}
+wilcox_results <- tibble::tibble(
+  Analyte = c("Anisole", "2-Heptanone"),
+  Test = "Wilcoxon signed-rank (paired)",
+  V_statistic = c(
+    wilcox_anisole$statistic,
+    wilcox_heptanone$statistic
+  ),
+  P_value = c(
+    wilcox_anisole$p.value,
+    wilcox_heptanone$p.value
+  )
+) %>%
+  mutate(
+    Interpretation = ifelse(
+      P_value < 0.05,
+      "Significant difference between models",
+      "No significant difference between models"
+    )
+  )
+
+wilcox_results %>%
+  knitr::kable(
+    caption = "Paired Wilcoxon signed-rank test on absolute errors (Baseline vs Proposed)",
+    digits = 4,
+    align = "lcccc"
+  ) %>%
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "center"
+  )
+
+```
+A paired Wilcoxon signed-rank test was applied to the absolute prediction errors obtained with the baseline and proposed calibration models, pairing measurements by SampleID.
+For anisole, a statistically significant difference was observed (V = 4558, p = 5.2e-05), indicating a clear reduction in error when using the proposed harmonised calibration.
+In contrast, no significant difference was found for 2-heptanone (V = 3228, p = 0.85), suggesting that the proposed method does not provide a measurable improvement over the baseline model for this endogenous compound.
+
+
+```{r}
+df_long <- final_table %>%
+  pivot_longer(
+    cols = c(abs_error_baseline, abs_error_proposed),
+    names_to  = "Method",
+    values_to = "AbsError"
+  ) %>%
+  mutate(
+    Method = recode(
+      Method,
+      abs_error_baseline = "Baseline",
+      abs_error_proposed = "Proposed"
+    )
+  )
+
+```
+```{r}
+ggplot(
+  df_long %>% filter(Analyte == "anisole"),
+  aes(x = Method, y = AbsError, fill = Method)
+) +
+  geom_boxplot(width = 0.5, outlier.shape = NA, alpha = 0.6) +
+  scale_fill_manual(values = model_colors) +
+  labs(
+    title = "Absolute Error Distribution (Anisole)",
+    y = "Absolute error (ppb)",
+    x = ""
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+```
+
+
+```{r}
+ggplot(
+  df_long %>% filter(Analyte == "heptanone"),
+  aes(x = Method, y = AbsError, fill = Method)
+) +
+  geom_boxplot(width = 0.5, outlier.shape = NA, alpha = 0.6) +
+  scale_fill_manual(values = model_colors) +
+  labs(
+    title = "Absolute Error Distribution (2-Heptanone)",
+    y = "Absolute error (ppb)",
+    x = ""
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
 ```
 
 ## Discussion

@@ -1,7 +1,7 @@
 Methodology and Error in Individual Urine Samples
 ================
 Tecla Duran Fort
-2025-12-11
+2025-12-12
 
 - <a href="#load-data" id="toc-load-data">Load Data</a>
 - <a href="#calibration-curves" id="toc-calibration-curves">Calibration
@@ -53,6 +53,10 @@ Tecla Duran Fort
     - <a href="#predicted-vs-true-total-concentration"
       id="toc-predicted-vs-true-total-concentration">Predicted vs True (Total)
       Concentration</a>
+  - <a href="#model-comparison" id="toc-model-comparison">Model
+    Comparison</a>
+    - <a href="#statistical-test" id="toc-statistical-test">Statistical
+      test</a>
   - <a href="#discussion" id="toc-discussion">Discussion</a>
 
 # Load Data
@@ -282,6 +286,7 @@ harmonization (proposed model).
 ## Extrapolation
 
 <img src="methodology_files/figure-gfm/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
+
 <img src="methodology_files/figure-gfm/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
 
 # Concentration Prediction
@@ -842,6 +847,106 @@ Proposed
 
 <img src="methodology_files/figure-gfm/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
 
+## Model Comparison
+
+### Statistical test
+
+Wilcoxon paired test
+
+**ANISOLE**
+
+    ## 
+    ##  Wilcoxon signed rank test with continuity correction
+    ## 
+    ## data:  df_anisole$abs_error_baseline and df_anisole$abs_error_proposed
+    ## V = 4558, p-value = 5.221e-05
+    ## alternative hypothesis: true location shift is not equal to 0
+
+**HEPTANONE**
+
+    ## 
+    ##  Wilcoxon signed rank test with continuity correction
+    ## 
+    ## data:  df_heptanone$abs_error_baseline and df_heptanone$abs_error_proposed
+    ## V = 3228, p-value = 0.8537
+    ## alternative hypothesis: true location shift is not equal to 0
+
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Paired Wilcoxon signed-rank test on absolute errors (Baseline vs
+Proposed)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Analyte
+</th>
+<th style="text-align:center;">
+Test
+</th>
+<th style="text-align:center;">
+V_statistic
+</th>
+<th style="text-align:center;">
+P_value
+</th>
+<th style="text-align:center;">
+Interpretation
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Anisole
+</td>
+<td style="text-align:center;">
+Wilcoxon signed-rank (paired)
+</td>
+<td style="text-align:center;">
+4558
+</td>
+<td style="text-align:center;">
+0.0001
+</td>
+<td style="text-align:center;">
+Significant difference between models
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2-Heptanone
+</td>
+<td style="text-align:center;">
+Wilcoxon signed-rank (paired)
+</td>
+<td style="text-align:center;">
+3228
+</td>
+<td style="text-align:center;">
+0.8537
+</td>
+<td style="text-align:center;">
+No significant difference between models
+</td>
+</tr>
+</tbody>
+</table>
+
+A paired Wilcoxon signed-rank test was applied to the absolute
+prediction errors obtained with the baseline and proposed calibration
+models, pairing measurements by SampleID. For anisole, a statistically
+significant difference was observed (V = 4558, p = 5.2e-05), indicating
+a clear reduction in error when using the proposed harmonised
+calibration. In contrast, no significant difference was found for
+2-heptanone (V = 3228, p = 0.85), suggesting that the proposed method
+does not provide a measurable improvement over the baseline model for
+this endogenous compound.
+
+<img src="methodology_files/figure-gfm/unnamed-chunk-40-1.png" style="display: block; margin: auto;" />
+
+<img src="methodology_files/figure-gfm/unnamed-chunk-41-1.png" style="display: block; margin: auto;" />
+
 ## Discussion
 
 The error is lower with our methodology in anisole but not in heptanone.
@@ -866,7 +971,7 @@ estimate the scale wrt the synthetic urine.
 
 Estimated scaling factors with uncertainty
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-37-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
 
 For anisole, the individual samples deviate more from the pool
 reference, while for 2-heptanone the scaling factors stay much closer to
