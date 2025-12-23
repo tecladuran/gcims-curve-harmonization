@@ -57,7 +57,7 @@ model_shapes <- c(
 # Load Data
 
 ```{r}
-path <- "../data/tables"
+path <- "data/tables"
 
 files <- list.files(path, pattern = "\\.csv$", full.names = TRUE)
 
@@ -644,7 +644,13 @@ p <- ggplot(df_plot, aes(x = conc_true, y = conc_pred,
     y = "Predicted (ppb)"
   ) +
   theme_minimal(base_size = 10) +
-  theme(legend.position = "bottom")
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    )
+  )
 
 ggsave(
   filename = file.path("figures", "predicted_vs_true_anisole.pdf"),
@@ -863,7 +869,13 @@ p <- ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
     y = "Predicted (ppb)"
   ) +
   theme_minimal(base_size = 10) +
-  theme(legend.position = "bottom")
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    )
+  )
 
 ggsave(
   filename = file.path("figures", "predicted_vs_true_heptanone.pdf"),

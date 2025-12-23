@@ -1,7 +1,7 @@
 Methodology and Error in Individual Urine Samples
 ================
 Tecla Duran Fort
-2025-12-12
+2025-12-23
 
 - <a href="#load-data" id="toc-load-data">Load Data</a>
 - <a href="#calibration-curves" id="toc-calibration-curves">Calibration
@@ -12,11 +12,11 @@ Tecla Duran Fort
   - <a href="#polynomial-fit" id="toc-polynomial-fit">Polynomial Fit</a>
 - <a href="#harmonization" id="toc-harmonization">Harmonization</a>
   - <a href="#anisole" id="toc-anisole">Anisole</a>
+    - <a href="#final-calibration-curve"
+      id="toc-final-calibration-curve">Final Calibration Curve</a>
+  - <a href="#heptanone" id="toc-heptanone">Heptanone</a>
     - <a href="#final-calibration-curves"
       id="toc-final-calibration-curves">Final Calibration Curves</a>
-  - <a href="#heptanone" id="toc-heptanone">Heptanone</a>
-    - <a href="#final-calibration-curves-1"
-      id="toc-final-calibration-curves-1">Final Calibration Curves</a>
   - <a href="#extrapolation" id="toc-extrapolation">Extrapolation</a>
 - <a href="#concentration-prediction"
   id="toc-concentration-prediction">Concentration Prediction</a>
@@ -75,7 +75,12 @@ Tecla Duran Fort
 
 ## Polynomial Fit
 
+    ## $anisole
+
 <img src="methodology_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+
+    ## 
+    ## $heptanone
 
 <img src="methodology_files/figure-gfm/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
 
@@ -248,14 +253,14 @@ res_anisole <- harmonize(pool_anisole, su_anisole)
 
 Harmonization parameters and uncertainty (Anisole)
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
-### Final Calibration Curves
+### Final Calibration Curve
 
 Calibration curves without harmonization (baseline model) and with pool
 harmonization (proposed model).
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
 ## Heptanone
 
@@ -274,20 +279,20 @@ Harmonization parameters and uncertainty (Heptanone)
 plot_harmonization(res_heptanone, title = "Calibration Harmonization - 2- Heptanone")
 ```
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
 
 ### Final Calibration Curves
 
 Calibration curves without harmonization (baseline model) and with pool
 harmonization (proposed model).
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
 
 ## Extrapolation
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-23-1.png" style="display: block; margin: auto;" />
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-21-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-24-1.png" style="display: block; margin: auto;" />
 
 # Concentration Prediction
 
@@ -632,11 +637,11 @@ Proposed
 
 ### RMSE vs Concentration Level
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-27-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-30-1.png" style="display: block; margin: auto;" />
 
 ### Predicted vs True Concentration
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-28-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-31-1.png" style="display: block; margin: auto;" />
 
 ## 2-Heptanone (Endogenous)
 
@@ -841,11 +846,11 @@ Proposed
 
 *Grouped by spiked concentration*
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-33-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-36-1.png" style="display: block; margin: auto;" />
 
 ### Predicted vs True (Total) Concentration
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-37-1.png" style="display: block; margin: auto;" />
 
 ## Model Comparison
 
@@ -943,9 +948,9 @@ calibration. In contrast, no significant difference was found for
 does not provide a measurable improvement over the baseline model for
 this endogenous compound.
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-40-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-43-1.png" style="display: block; margin: auto;" />
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-41-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
 
 ## Discussion
 
@@ -971,7 +976,7 @@ estimate the scale wrt the synthetic urine.
 
 Estimated scaling factors with uncertainty
 
-<img src="methodology_files/figure-gfm/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
+<img src="methodology_files/figure-gfm/unnamed-chunk-47-1.png" style="display: block; margin: auto;" />
 
 For anisole, the individual samples deviate more from the pool
 reference, while for 2-heptanone the scaling factors stay much closer to

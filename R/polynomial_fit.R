@@ -73,7 +73,7 @@ fit_polynomials <- function(df, analytes, conc_col = "concentration",
 
 
 plot_polynomial_fits <- function(df, models_list) {
-  
+  plots <- list()
   for (analyte in names(models_list)) {
     
     fit <- models_list[[analyte]]
@@ -134,8 +134,8 @@ plot_polynomial_fits <- function(df, models_list) {
           face = "bold",      
           size = 11   
         ))
+    plots[[analyte]] <- p
     
-    print(p)
-    cat("\n\n\n")
   }
+  return(plots)
 }
