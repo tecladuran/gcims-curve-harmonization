@@ -31,6 +31,8 @@ library(ggplot2)
 library(tibble)
 library(viridis)
 source("../load_harmonization_tools.R")
+library(rprojroot)
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::is_git_root))
 ```
 
 # Data loading
@@ -43,8 +45,8 @@ In this document we harmonize calibration curves between two matrices:
 We work with two analytes: *anisole* and *heptanone*.
 
 ```{r}
-su   <- read.csv("../data/tables/su.csv")
-pool <- read.csv("../data/tables/pool.csv")
+su   <- read.csv("data/tables/su.csv")
+pool <- read.csv("data/tables/pool.csv")
 
 analytes <- c("anisole", "heptanone")
 
@@ -718,7 +720,15 @@ knitr::kable(
 ```
 
 ```{r}
-plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
+p<-plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
+ggsave(
+  filename = file.path("figures", "harmonization_anisole.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+p
 ```
 
 ## Heptanone
@@ -750,7 +760,20 @@ knitr::kable(
 ```
 
 ```{r, echo=TRUE}
-plot_harmonization(res_heptanone, title = "Calibration Harmonization - Heptanone")
+p <- plot_harmonization(
+  res_heptanone,
+  title = "Calibration Harmonization - Heptanone"
+)
+
+ggsave(
+  filename = file.path("figures", "harmonization_heptanone.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 # Loss landscape and paraboloid approximation
@@ -892,6 +915,22 @@ hm_anisole <- plot_loss_heatmaps(res_anisole, title_prefix = "Anisole - ", )
 hm_anisole$real
 hm_anisole$paraboloid
 ```
+```{r, echo=FALSE}
+ggsave(
+  filename = file.path("figures", "loss_heatmap_anisole_real.pdf"),
+  plot = hm_anisole$real,
+  width = 6,
+  height = 5,
+  device = cairo_pdf
+)
+ggsave(
+  filename = file.path("figures", "loss_heatmap_anisole_paraboloid.pdf"),
+  plot = hm_anisole$paraboloid,
+  width = 6,
+  height = 5,
+  device = cairo_pdf
+)
+```
 
 ### Heptanone
 
@@ -899,6 +938,23 @@ hm_anisole$paraboloid
 hm_heptanone <- plot_loss_heatmaps(res_heptanone, title_prefix = "Heptanone - ")
 hm_heptanone$real
 hm_heptanone$paraboloid
+```
+```{r, echo=FALSE}
+ggsave(
+  filename = file.path("figures", "loss_heatmap_heptanone_real.pdf"),
+  plot = hm_heptanone$real,
+  width = 6,
+  height = 5,
+  device = cairo_pdf
+)
+ggsave(
+  filename = file.path("figures", "loss_heatmap_heptanone_paraboloid.pdf"),
+  plot = hm_heptanone$paraboloid,
+  width = 6,
+  height = 5,
+  device = cairo_pdf
+)
+
 ```
 
 
@@ -1046,20 +1102,76 @@ plot_loss_1d <- function(h,
 ### Anisole
 
 ```{r, echo=TRUE}
-plot_loss_1d(res_anisole, param = "scale")
+p <- plot_loss_1d(
+  res_anisole,
+  param = "scale",
+  title = "Anisole - Loss vs scale"
+)
+
+ggsave(
+  filename = file.path("figures", "loss_1d_anisole_scale.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 ```{r, echo=TRUE}
-plot_loss_1d(res_anisole, param = "shift")
+p <- plot_loss_1d(
+  res_anisole,
+  param = "shift",
+  title = "Anisole – Loss vs shift"
+)
+
+ggsave(
+  filename = file.path("figures", "loss_1d_anisole_shift.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 ### Heptanone
 ```{r, echo=TRUE}
-plot_loss_1d(res_heptanone, param = "scale")
+p <- plot_loss_1d(
+  res_heptanone,
+  param = "scale",
+  title = "Heptanone – Loss vs scale"
+)
+
+ggsave(
+  filename = file.path("figures", "loss_1d_heptanone_scale.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 ```{r, echo=TRUE}
-plot_loss_1d(res_heptanone, param = "shift")
+p <- plot_loss_1d(
+  res_heptanone,
+  param = "shift",
+  title = "Heptanone – Loss vs shift"
+)
+
+ggsave(
+  filename = file.path("figures", "loss_1d_heptanone_shift.pdf"),
+  plot = p,
+  width = 6,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 

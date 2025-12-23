@@ -30,6 +30,8 @@ library(ggplot2)
 library(tibble)
 library(patchwork)
 library(tidyr)
+library(rprojroot)
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::is_git_root))
 
 source("../load_harmonization_tools.R")
 
@@ -120,6 +122,29 @@ models_list <- res_poly$models
 plot_polynomial_fits(su, models_list)
 ```
 
+```{r, echo=FALSE}
+plots_poly <- plot_polynomial_fits(su, models_list)
+
+p1 <- plots_poly[[1]]  # Anisole
+p2 <- plots_poly[[2]]  # Heptanone
+
+ggsave(
+  filename = file.path("figures", "polynomial_fit_anisole.pdf"),
+  plot = p1,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+
+ggsave(
+  filename = file.path("figures", "polynomial_fit_heptanone.pdf"),
+  plot = p2,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+```
+
 ```{r}
 coef_poly %>%
   knitr::kable(
@@ -196,7 +221,7 @@ align = "c"
 plot_harmonization(res_anisole, title = "Calibration Harmonization - Anisole")
 ```
 
-### Final Calibration Curves
+### Final Calibration Curve
 
 Calibration curves without harmonization (baseline model) and with pool harmonization (proposed model).
 
@@ -208,50 +233,34 @@ calibration_anisole <- tibble(
 )
 ```
 
-```{r, fig.width=4, fig.height=3, fig.align='center'}
-ggplot(calibration_anisole) +
-  
-  # Harmonized (navy)
-  geom_line(
-    aes(
-      x = concentration_harmonized,
-      y = intensity,
-      color = "Harmonized"
-    ),
-    linewidth = 1.2
-  ) +
-  
-  # Original (orange)
-  geom_line(
-    aes(
-      x = concentration_original,
-      y = intensity,
-      color = "Original"
-    ),
-    linewidth = 1.2,
-    linetype = "dashed"
-  ) +
-  
-  scale_color_manual(
-    name = "",
-    values = c("Harmonized" = "navy", "Original" = "#E0711A")
-  ) +
-  
+```{r, fig.width=4, fig.height=3, fig.align='center', echo=FALSE}
+p <- ggplot(calibration_anisole) +
+  geom_line(aes(x = concentration_harmonized, y = intensity, color = "Harmonized"),
+            linewidth = 1.2) +
+  geom_line(aes(x = concentration_original, y = intensity, color = "Original"),
+            linewidth = 1.2, linetype = "dashed") +
+  scale_color_manual(values = c("Harmonized" = "navy", "Original" = "#E0711A")) +
   labs(
     title = "Calibration Curves - Anisole",
     x = "Concentration (ppb)",
     y = "Intensity"
   ) +
-  
   theme_minimal(base_size = 10) +
-  theme(
-    plot.title = element_text(size = 11, face = "bold", hjust = .5),
-    legend.position = "bottom",
-    legend.text = element_text(size = 9)
-  )
+  theme(legend.position = "bottom")
+
+p
 
 ```
 
+```{r}
+ggsave(
+  filename = file.path("figures", "calibration_curves_anisole.pdf"),
+  plot = p,
+  width = 4,
+  height = 3,
+  device = cairo_pdf
+)
+```
 
 
 ## Heptanone
@@ -302,7 +311,7 @@ calibration_heptanone <- tibble(
 ```
 
 ```{r}
-ggplot(calibration_heptanone) +
+p<- ggplot(calibration_heptanone) +
   
   # Harmonized (navy)
   geom_line(
@@ -342,7 +351,16 @@ ggplot(calibration_heptanone) +
     legend.position = "bottom",
     legend.text = element_text(size = 9)
   )
-
+p
+```
+```{r}
+ggsave(
+  filename = file.path("figures", "calibration_curves_heptanone.pdf"),
+  plot = p,
+  width = 4,
+  height = 3,
+  device = cairo_pdf
+)
 ```
 
 
@@ -579,7 +597,7 @@ rmse_levels <- df_error_a %>%
 ```
 
 ```{r, fig.height=4, fig.width=5}
-ggplot(rmse_levels, aes(x = concentration, y = RMSE, color = Method)) +
+p <- ggplot(rmse_levels, aes(x = concentration, y = RMSE, color = Method)) +
   geom_point(size = 3) +
   geom_line(size = 1) +
   scale_color_manual(values = model_colors) +
@@ -589,10 +607,17 @@ ggplot(rmse_levels, aes(x = concentration, y = RMSE, color = Method)) +
     y = "RMSE (ppb)"
   ) +
   theme_minimal(base_size = 10) +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_blank()
-  )
+  theme(legend.position = "bottom")
+
+ggsave(
+  filename = file.path("figures", "rmse_vs_concentration_anisole.pdf"),
+  plot = p,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 
 ```
 
@@ -606,8 +631,8 @@ df_plot <- df_error_a%>%
     conc_pred = conc_estimated
   )
 
-ggplot(df_plot, aes(x = conc_true, y = conc_pred,
-                    color = Method, shape = Method)) +
+p <- ggplot(df_plot, aes(x = conc_true, y = conc_pred,
+                         color = Method, shape = Method)) +
   geom_point(size = 2.8, alpha = 0.85) +
   geom_abline(slope = 1, intercept = 0,
               linetype = "dashed", linewidth = 0.8) +
@@ -619,10 +644,17 @@ ggplot(df_plot, aes(x = conc_true, y = conc_pred,
     y = "Predicted (ppb)"
   ) +
   theme_minimal(base_size = 10) +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_blank()
-  )
+  theme(legend.position = "bottom")
+
+ggsave(
+  filename = file.path("figures", "predicted_vs_true_anisole.pdf"),
+  plot = p,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 
 ```
 
@@ -782,11 +814,10 @@ rmse_levels_h <- df_error_h %>%
     .groups = "drop"
   )
 
-ggplot(rmse_levels_h, aes(x = concentration, y = RMSE, color = Method)) +
+p <- ggplot(rmse_levels_h, aes(x = concentration, y = RMSE, color = Method)) +
   geom_point(size = 3) +
   geom_line(size = 1) +
-  geom_errorbar(aes(ymin = RMSE - SD, ymax = RMSE + SD),
-                width = 0.2) +
+  geom_errorbar(aes(ymin = RMSE - SD, ymax = RMSE + SD), width = 0.2) +
   scale_color_manual(values = model_colors) +
   labs(
     title = "RMSE vs Spike Concentration (2-Heptanone)",
@@ -794,6 +825,17 @@ ggplot(rmse_levels_h, aes(x = concentration, y = RMSE, color = Method)) +
     y = "RMSE (ppb)"
   ) +
   theme_minimal(base_size = 10)
+
+ggsave(
+  filename = file.path("figures", "rmse_vs_concentration_heptanone.pdf"),
+  plot = p,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
+
 ```
 
 
@@ -808,8 +850,8 @@ df_plot_h <- df_error_h %>%
     conc_pred = conc_estimated
   )
 
-ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
-                      color = Method, shape = Method)) +
+p <- ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
+                           color = Method, shape = Method)) +
   geom_point(size = 2.8, alpha = 0.85) +
   geom_abline(slope = 1, intercept = 0,
               linetype = "dashed", linewidth = 0.8) +
@@ -821,10 +863,17 @@ ggplot(df_plot_h, aes(x = conc_true, y = conc_pred,
     y = "Predicted (ppb)"
   ) +
   theme_minimal(base_size = 10) +
-  theme(
-    legend.position="bottom",
-    legend.title=element_blank()
-  )
+  theme(legend.position = "bottom")
+
+ggsave(
+  filename = file.path("figures", "predicted_vs_true_heptanone.pdf"),
+  plot = p,
+  width = 5,
+  height = 4,
+  device = cairo_pdf
+)
+
+p
 ```
 
 ```{r}
@@ -1129,11 +1178,35 @@ make_plot <- function(analyte){
 p1 <- make_plot("anisole")
 p2 <- make_plot("heptanone")
 
-p1 + p2 + plot_annotation(
-  title="Scaling Factors for All Samples",
-  subtitle="Dashed line = Pool scale"
+
+p <- p1 + p2 +
+  plot_annotation(
+    title = "Scaling Factors for All Samples",
+    subtitle = "Dashed line = Pool scale",
+    theme = theme(
+      plot.title = element_text(
+        face = "bold",
+        hjust = 0.5
+      ),
+      plot.subtitle = element_text(
+        hjust = 0.5
+      )
+    )
+  )
+
+
+ggsave(
+  filename = file.path("figures", "scaling_factors_all_samples.pdf"),
+  plot = p,
+  width = 9,
+  height = 4,
+  device = cairo_pdf
 )
+
+p
+
 ```
+
 
 For anisole, the individual samples deviate more from the pool reference, while for 2-heptanone the scaling factors stay much closer to 1 (synthetic urine), indicating that matrix effects are smaller and the harmonization may not be necessary or helpful in this case. 
 
